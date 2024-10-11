@@ -43,6 +43,7 @@ class ControllerConfig:
     controller_dt: float
     gravity_compensation: bool
     background_send_recv: bool
+    shutdown_to_passive: bool
 
 class RobotConfigFactory:
     @classmethod

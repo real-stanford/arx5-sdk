@@ -6,6 +6,7 @@
                 "${workspaceFolder}/**",
                 "${workspaceFolder}/include",
                 "${HOME}/miniforge3/envs/arx-py310/include",
+                "${HOME}/miniforge3/envs/arx-py310/include/eigen3",
             ],
             "defines": [],
             "compilerPath": "/usr/bin/gcc",

@@ -185,14 +185,20 @@ class ControllerConfig
     double controller_dt;
     bool gravity_compensation;
     bool background_send_recv;
+    bool shutdown_to_passive;
+    // true: will set the arm to damping then passive mode when pressing `ctrl-C`. (recommended);
+    //       pressing `ctrl-\` will directly kill the program so this process will be skipped
+    // false: will keep the arm in the air when shutting down the controller (both `ctrl-\` and `ctrl-C`).
+    //       X5 cannot be kept in the air.
 
     ControllerConfig(std::string controller_type, VecDoF default_kp, VecDoF default_kd, double default_gripper_kp,
                      double default_gripper_kd, int over_current_cnt_max, double controller_dt,
-                     bool gravity_compensation, bool background_send_recv)
+                     bool gravity_compensation, bool background_send_recv, bool shutdown_to_passive)
         : controller_type(controller_type), default_kp(default_kp), default_kd(default_kd),
           default_gripper_kp(default_gripper_kp), default_gripper_kd(default_gripper_kd),
           over_current_cnt_max(over_current_cnt_max), controller_dt(controller_dt),
-          gravity_compensation(gravity_compensation), background_send_recv(background_send_recv)
+          gravity_compensation(gravity_compensation), background_send_recv(background_send_recv),
+          shutdown_to_passive(shutdown_to_passive)
     {
     }
 };
@@ -233,7 +239,8 @@ class ControllerConfigFactory
             20,                                                                 // over_current_cnt_max
             0.002,                                                              // controller_dt
             true,                                                               // gravity_compensation
-            true                                                                // background_send_recv
+            true,                                                               // background_send_recv
+            true                                                                // shutdown_to_passive
         );
         configurations["joint_controller_6"] = std::make_shared<ControllerConfig>(
             "joint_controller",                                           // controller_type
@@ -244,7 +251,8 @@ class ControllerConfigFactory
             20,                                                           // over_current_cnt_max
             0.002,                                                        // controller_dt
             true,                                                         // gravity_compensation
-            true                                                          // background_send_recv
+            true,                                                         // background_send_recv
+            true                                                          // shutdown_to_passive
         );
         configurations["cartesian_controller_7"] = std::make_shared<ControllerConfig>(
             "cartesian_controller",                                                 // controller_type
@@ -255,7 +263,8 @@ class ControllerConfigFactory
             20,                                                                     // over_current_cnt_max
             0.005,                                                                  // controller_dt
             true,                                                                   // gravity_compensation
-            true                                                                    // background_send_recv
+            true,                                                                   // background_send_recv
+            true                                                                    // shutdown_to_passive
         );
         configurations["cartesian_controller_6"] = std::make_shared<ControllerConfig>(
             "cartesian_controller",                                          // controller_type
@@ -266,7 +275,8 @@ class ControllerConfigFactory
             20,                                                              // over_current_cnt_max
             0.005,                                                           // controller_dt
             true,                                                            // gravity_compensation
-            true                                                             // background_send_recv
+            true,                                                            // background_send_recv
+            true                                                             // shutdown_to_passive
         );
     }
     std::unordered_map<std::string, std::shared_ptr<ControllerConfig>> configurations;

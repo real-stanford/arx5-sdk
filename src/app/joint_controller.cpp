@@ -19,6 +19,12 @@ Arx5JointController::Arx5JointController(RobotConfig robot_config, ControllerCon
     _background_send_recv_thread = std::thread(&Arx5JointController::_background_send_recv, this);
     _background_send_recv_running = _controller_config.background_send_recv;
     _logger->info("Background send_recv task is running at ID: {}", syscall(SYS_gettid));
+    if (_robot_config.robot_model == "X5" && !_controller_config.shutdown_to_passive)
+    {
+        _logger->warn("When shutting down X5 robot arms, the motors have to be set to passive. "
+                      "_controller_config.shutdown_to_passive is set to `true`");
+        _controller_config.shutdown_to_passive = true;
+    }
 }
 
 Arx5JointController::Arx5JointController(std::string model, std::string interface_name, std::string urdf_path)
@@ -33,19 +39,29 @@ Arx5JointController::Arx5JointController(std::string model, std::string interfac
 
 Arx5JointController::~Arx5JointController()
 {
-    Gain damping_gain{_robot_config.joint_dof};
-    damping_gain.kd = _controller_config.default_kd;
-    // damping_gain.kd[0] *= 3;
-    // damping_gain.kd[1] *= 3;
-    // damping_gain.kd[2] *= 3;
-    // damping_gain.kd[3] *= 1.5;
-    _logger->info("Set to damping before exit");
-    set_gain(damping_gain);
-    set_joint_cmd(JointState(_robot_config.joint_dof));
-    _background_send_recv_running = true;
-    sleep_ms(1000);
-    _controller_config.gravity_compensation = false;
-    sleep_ms(1000);
+    if (_controller_config.shutdown_to_passive)
+    {
+        Gain damping_gain{_robot_config.joint_dof};
+        damping_gain.kd = _controller_config.default_kd;
+
+        // Increase damping if needed
+        // damping_gain.kd[0] *= 3;
+        // damping_gain.kd[1] *= 3;
+        // damping_gain.kd[2] *= 3;
+        // damping_gain.kd[3] *= 1.5;
+
+        _logger->info("Set to damping before exit");
+        set_gain(damping_gain);
+        set_joint_cmd(JointState(_robot_config.joint_dof));
+        _background_send_recv_running = true;
+        _controller_config.gravity_compensation = false;
+        sleep_ms(2000);
+    }
+    else
+    {
+        _logger->info("Disconnect the motors without setting to damping");
+    }
+
     _destroy_background_threads = true;
     _background_send_recv_thread.join();
     _logger->info("background send_recv task joined");
@@ -71,10 +87,10 @@ void Arx5JointController::_init_robot()
     JointState init_joint_state = get_state();
     init_joint_state.vel = VecDoF::Zero(_robot_config.joint_dof);
 
-    if (!_controller_config.gravity_compensation)
-    {
-        init_joint_state.torque = VecDoF::Zero(_robot_config.joint_dof);
-    }
+    // if (!_controller_config.gravity_compensation)
+    // {
+    init_joint_state.torque = VecDoF::Zero(_robot_config.joint_dof);
+    // }
     set_joint_cmd(init_joint_state); // initialize joint command to zero
 
     set_gain(gain); // set to damping by default
