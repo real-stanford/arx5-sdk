@@ -7,23 +7,26 @@
 using namespace arx;
 
 Arx5JointController::Arx5JointController(RobotConfig robot_config, ControllerConfig controller_config,
-                                         std::string interface_name)
+                                         std::string interface_name, std::string urdf_path)
     : _can_handle(interface_name),
       _logger(spdlog::stdout_color_mt(robot_config.robot_model + std::string("_") + interface_name)),
       _robot_config(robot_config), _controller_config(controller_config)
 {
     _logger->set_pattern("[%H:%M:%S %n %^%l%$] %v");
+    _solver = std::make_shared<Arx5Solver>(urdf_path, _robot_config.joint_dof, _robot_config.base_link_name,
+                                           _robot_config.eef_link_name, _robot_config.gravity_vector);
     _init_robot();
     _background_send_recv_thread = std::thread(&Arx5JointController::_background_send_recv, this);
+    _background_send_recv_running = _controller_config.background_send_recv;
     _logger->info("Background send_recv task is running at ID: {}", syscall(SYS_gettid));
 }
 
-Arx5JointController::Arx5JointController(std::string model, std::string interface_name)
+Arx5JointController::Arx5JointController(std::string model, std::string interface_name, std::string urdf_path)
     : Arx5JointController::Arx5JointController(
           RobotConfigFactory::get_instance().get_config(model),
           ControllerConfigFactory::get_instance().get_config(
               "joint_controller", RobotConfigFactory::get_instance().get_config(model).joint_dof),
-          interface_name)
+          interface_name, urdf_path)
 
 {
 }
@@ -40,8 +43,9 @@ Arx5JointController::~Arx5JointController()
     set_gain(damping_gain);
     set_joint_cmd(JointState(_robot_config.joint_dof));
     _background_send_recv_running = true;
-    _enable_gravity_compensation = false;
-    sleep_ms(2000);
+    sleep_ms(1000);
+    _controller_config.gravity_compensation = false;
+    sleep_ms(1000);
     _destroy_background_threads = true;
     _background_send_recv_thread.join();
     _logger->info("background send_recv task joined");
@@ -52,32 +56,28 @@ Arx5JointController::~Arx5JointController()
 
 void Arx5JointController::_init_robot()
 {
-
-    for (int i = 0; i < _robot_config.joint_dof; ++i)
+    // Background send receive is disabled during initialization
+    int init_rounds = 10; // Make sure the states of each motor is fully initialized
+    for (int j = 0; j < init_rounds; j++)
     {
-        if (_robot_config.motor_type[i] == MotorType::DM_J4310 || _robot_config.motor_type[i] == MotorType::DM_J4340)
-        {
-            int id = _robot_config.motor_id[i];
-            _can_handle.enable_DM_motor(id);
-            sleep_us(1000);
-        }
-    }
-    if (_robot_config.gripper_motor_type == MotorType::DM_J4310)
-    {
-        _can_handle.enable_DM_motor(_robot_config.gripper_motor_id);
-        sleep_us(1000);
+        recv_once();
+        _check_joint_state_sanity();
+        _over_current_protection();
     }
 
     Gain gain{_robot_config.joint_dof};
     gain.kd = _controller_config.default_kd;
-    set_joint_cmd(JointState(_robot_config.joint_dof)); // initialize joint command to zero
-    set_gain(gain);                                     // set to damping by default
-    for (int i = 0; i <= 10; ++i)
+
+    JointState init_joint_state = get_state();
+    init_joint_state.vel = VecDoF::Zero(_robot_config.joint_dof);
+
+    if (!_controller_config.gravity_compensation)
     {
-        // make sure all the motor positions are updated
-        _send_recv();
-        sleep_ms(5);
+        init_joint_state.torque = VecDoF::Zero(_robot_config.joint_dof);
     }
+    set_joint_cmd(init_joint_state); // initialize joint command to zero
+
+    set_gain(gain); // set to damping by default
     // Check whether any motor has non-zero position
     if (_joint_state.pos == VecDoF::Zero(_robot_config.joint_dof))
     {
@@ -86,7 +86,7 @@ void Arx5JointController::_init_robot()
             "None of the motors are initialized. Please check the connection or power of the arm.");
     }
     _input_joint_cmd = get_state();
-    _input_joint_cmd.torque = VecDoF::Zero(_robot_config.joint_dof);
+    _input_joint_cmd.torque = init_joint_state.torque;
     _input_joint_cmd.vel = VecDoF::Zero(_robot_config.joint_dof);
     _input_joint_cmd.timestamp = 0;
     _output_joint_cmd = _input_joint_cmd;
@@ -123,11 +123,12 @@ void Arx5JointController::send_recv_once()
 {
     if (_background_send_recv_running)
     {
-        std::cout << "send_recv task is already running in background. send_recv_once is ignored." << std::endl;
+        _logger->warn("send_recv task is already running in background. send_recv_once is ignored.");
         return;
     }
-    _send_recv();
+    _check_joint_state_sanity();
     _over_current_protection();
+    _send_recv();
 }
 
 void Arx5JointController::_update_output_cmd()
@@ -172,7 +173,7 @@ void Arx5JointController::_update_output_cmd()
         }
     }
     _intermediate_joint_cmd = _output_joint_cmd;
-    if (_enable_gravity_compensation && _solver != nullptr)
+    if (_controller_config.gravity_compensation)
     {
         VecDoF gravity_torque = _solver->inverse_dynamics(_joint_state.pos, VecDoF::Zero(_robot_config.joint_dof),
                                                           VecDoF::Zero(_robot_config.joint_dof));
@@ -285,7 +286,88 @@ double Arx5JointController::get_timestamp()
     return double(get_time_us() - _start_time_us) / 1e6;
 }
 
-bool Arx5JointController::_send_recv()
+void Arx5JointController::recv_once()
+{
+    int communicate_sleep_us = 150;
+    for (int i = 0; i < _robot_config.joint_dof; i++)
+    {
+        int start_send_motor_time_us = get_time_us();
+        if (_robot_config.motor_type[i] == MotorType::EC_A4310)
+        {
+            _logger->error("EC_A4310 motor type is not supported yet.");
+            assert(false);
+        }
+        else if (_robot_config.motor_type[i] == MotorType::DM_J4310 ||
+                 _robot_config.motor_type[i] == MotorType::DM_J4340 ||
+                 _robot_config.motor_type[i] == MotorType::DM_J8009)
+        {
+            _can_handle.enable_DM_motor(_robot_config.motor_id[i]);
+        }
+        else
+        {
+            _logger->error("Motor type not supported.");
+            assert(false);
+        }
+        int finish_send_motor_time_us = get_time_us();
+        sleep_us(communicate_sleep_us - (finish_send_motor_time_us - start_send_motor_time_us));
+    }
+    if (_robot_config.gripper_motor_type == MotorType::DM_J4310)
+    {
+        int start_send_motor_time_us = get_time_us();
+        _can_handle.enable_DM_motor(_robot_config.gripper_motor_id);
+        int finish_send_motor_time_us = get_time_us();
+        sleep_us(communicate_sleep_us - (finish_send_motor_time_us - start_send_motor_time_us));
+    }
+    sleep_ms(1); // Wait until all the messages are updated
+    _update_joint_state();
+}
+
+void Arx5JointController::_update_joint_state()
+{
+    // TODO: in the motor documentation, there shouldn't be these torque constants. Torque will go directly into the
+    // motors
+    const double torque_constant_EC_A4310 = 1.4; // Nm/A
+    const double torque_constant_DM_J4310 = 0.424;
+    const double torque_constant_DM_J4340 = 1.0;
+    std::array<OD_Motor_Msg, 10> motor_msg = _can_handle.get_motor_msg();
+    std::lock_guard<std::mutex> guard_state(_state_mutex);
+
+    for (int i = 0; i < _robot_config.joint_dof; i++)
+    {
+        _joint_state.pos[i] = motor_msg[_robot_config.motor_id[i]].angle_actual_rad;
+        _joint_state.vel[i] = motor_msg[_robot_config.motor_id[i]].speed_actual_rad;
+
+        // Torque: matching the values (there must be something wrong)
+        if (_robot_config.motor_type[i] == MotorType::EC_A4310)
+        {
+            _joint_state.torque[i] = motor_msg[_robot_config.motor_id[i]].current_actual_float *
+                                     torque_constant_EC_A4310 * torque_constant_EC_A4310;
+            // Why there are two torque_constant_EC_A4310?
+        }
+        else if (_robot_config.motor_type[i] == MotorType::DM_J4310)
+        {
+            _joint_state.torque[i] =
+                motor_msg[_robot_config.motor_id[i]].current_actual_float * torque_constant_DM_J4310;
+        }
+        else if (_robot_config.motor_type[i] == MotorType::DM_J4340)
+        {
+            _joint_state.torque[i] =
+                motor_msg[_robot_config.motor_id[i]].current_actual_float * torque_constant_DM_J4340;
+        }
+    }
+
+    _joint_state.gripper_pos = motor_msg[_robot_config.gripper_motor_id].angle_actual_rad /
+                               _robot_config.gripper_open_readout * _robot_config.gripper_width;
+
+    _joint_state.gripper_vel = motor_msg[_robot_config.gripper_motor_id].speed_actual_rad /
+                               _robot_config.gripper_open_readout * _robot_config.gripper_width;
+
+    _joint_state.gripper_torque =
+        motor_msg[_robot_config.gripper_motor_id].current_actual_float * torque_constant_DM_J4310;
+    _joint_state.timestamp = get_timestamp();
+}
+
+void Arx5JointController::_send_recv()
 {
     // TODO: in the motor documentation, there shouldn't be these torque constants. Torque will go directly into the
     // motors
@@ -323,7 +405,7 @@ bool Arx5JointController::_send_recv()
         else
         {
             _logger->error("Motor type not supported.");
-            return false;
+            return;
         }
         int finish_send_motor_time_us = get_time_us();
         sleep_us(communicate_sleep_us - (finish_send_motor_time_us - start_send_motor_time_us));
@@ -342,10 +424,6 @@ bool Arx5JointController::_send_recv()
         sleep_us(communicate_sleep_us - (finish_send_motor_time_us - start_send_motor_time_us));
     }
 
-    int start_get_motor_msg_time_us = get_time_us();
-    std::array<OD_Motor_Msg, 10> motor_msg = _can_handle.get_motor_msg();
-    int get_motor_msg_time_us = get_time_us();
-
     // _logger->trace("update_cmd: {} us, send_motor_0: {} us, send_motor_1: {} us, send_motor_2: {} us, send_motor_3:
     // {} us, send_motor_4: {} us, send_motor_5: {} us, send_motor_6: {} us, get_motor_msg: {} us",
     //                update_cmd_time_us - start_time_us, send_motor_0_time_us - start_send_motor_0_time_us,
@@ -355,41 +433,7 @@ bool Arx5JointController::_send_recv()
     //                start_send_motor_5_time_us, send_motor_6_time_us - start_send_motor_6_time_us,
     //                get_motor_msg_time_us - start_get_motor_msg_time_us);
 
-    std::lock_guard<std::mutex> guard_state(_state_mutex);
-    for (int i = 0; i < _robot_config.joint_dof; i++)
-    {
-        _joint_state.pos[i] = motor_msg[_robot_config.motor_id[i]].angle_actual_rad;
-        _joint_state.vel[i] = motor_msg[_robot_config.motor_id[i]].speed_actual_rad;
-
-        // Torque: matching the values (there must be something wrong)
-        if (_robot_config.motor_type[i] == MotorType::EC_A4310)
-        {
-            _joint_state.torque[i] = motor_msg[_robot_config.motor_id[i]].current_actual_float *
-                                     torque_constant_EC_A4310 * torque_constant_EC_A4310;
-            // Why there are two torque_constant_EC_A4310?
-        }
-        else if (_robot_config.motor_type[i] == MotorType::DM_J4310)
-        {
-            _joint_state.torque[i] =
-                motor_msg[_robot_config.motor_id[i]].current_actual_float * torque_constant_DM_J4310;
-        }
-        else if (_robot_config.motor_type[i] == MotorType::DM_J4340)
-        {
-            _joint_state.torque[i] =
-                motor_msg[_robot_config.motor_id[i]].current_actual_float * torque_constant_DM_J4340;
-        }
-    }
-
-    _joint_state.gripper_pos = motor_msg[_robot_config.gripper_motor_id].angle_actual_rad /
-                               _robot_config.gripper_open_readout * _robot_config.gripper_width;
-
-    _joint_state.gripper_vel = motor_msg[_robot_config.gripper_motor_id].speed_actual_rad /
-                               _robot_config.gripper_open_readout * _robot_config.gripper_width;
-
-    _joint_state.gripper_torque =
-        motor_msg[_robot_config.gripper_motor_id].current_actual_float * torque_constant_DM_J4310;
-    _joint_state.timestamp = get_timestamp();
-    return true;
+    _update_joint_state();
 }
 
 void Arx5JointController::_check_joint_state_sanity()
@@ -735,32 +779,4 @@ void Arx5JointController::calibrate_joint(int joint_id)
 void Arx5JointController::set_log_level(spdlog::level::level_enum log_level)
 {
     _logger->set_level(log_level);
-}
-
-void Arx5JointController::enable_gravity_compensation(std::string urdf_path)
-{
-    _logger->info("Enable gravity compensation");
-    _logger->info("Loading urdf from {}", urdf_path);
-    _solver = std::make_shared<Arx5Solver>(urdf_path, _robot_config.joint_dof, _robot_config.base_link_name,
-                                           _robot_config.eef_link_name, _robot_config.gravity_vector);
-    _enable_gravity_compensation = true;
-}
-
-void Arx5JointController::disable_gravity_compensation()
-{
-    _logger->info("Disable gravity compensation");
-    _enable_gravity_compensation = false;
-    _solver.reset();
-}
-
-void Arx5JointController::enable_background_send_recv()
-{
-    _logger->info("Enable background send_recv");
-    _background_send_recv_running = true;
-}
-
-void Arx5JointController::disable_background_send_recv()
-{
-    _logger->info("Disable background send_recv");
-    _background_send_recv_running = false;
 }

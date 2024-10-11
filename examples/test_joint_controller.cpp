@@ -5,7 +5,7 @@
 
 using namespace arx;
 
-Arx5JointController *arx5_joint_controller = new Arx5JointController("X5", "can0");
+Arx5JointController *arx5_joint_controller = new Arx5JointController("X5", "can0", "../models/arx5.urdf");
 
 void signal_handler(int signal)
 {
@@ -17,8 +17,6 @@ void signal_handler(int signal)
 int main()
 {
     std::signal(SIGINT, signal_handler);
-    arx5_joint_controller->enable_background_send_recv();
-    arx5_joint_controller->enable_gravity_compensation("../models/arx5.urdf");
     int loop_cnt = 0;
     while (true)
     {

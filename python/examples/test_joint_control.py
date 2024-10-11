@@ -35,8 +35,17 @@ def main(model: str, interface: str, urdf_path: str):
     # Modify the default configuration here
     # controller_config.controller_dt = 0.01 # etc.
 
+    USE_MULTITHREADING = True
+    if USE_MULTITHREADING:
+        # Will create another thread that communicates with the arm, so each send_recv_once() will take no time
+        # for the main thread to execute. Otherwise (without background send/recv), send_recv_once() will block the
+        # main thread until the arm responds (usually 2ms).
+        controller_config.background_send_recv = True
+    else:
+        controller_config.background_send_recv = False
+
     arx5_joint_controller = arx5.Arx5JointController(
-        robot_config, controller_config, interface
+        robot_config, controller_config, interface, urdf_path
     )
 
     # Or you can directly use the model and interface name
@@ -48,14 +57,8 @@ def main(model: str, interface: str, urdf_path: str):
     controller_config = arx5_joint_controller.get_controller_config()
 
     step_num = 1500
-    USE_MULTITHREADING = True
-    if USE_MULTITHREADING:
-        # Will create another thread that communicates with the arm, so each send_recv_once() will take no time
-        # for the main thread to execute. Otherwise (without background send/recv), send_recv_once() will block the
-        # main thread until the arm responds (usually 2ms).
-        arx5_joint_controller.enable_background_send_recv()
+
     arx5_joint_controller.reset_to_home()
-    arx5_joint_controller.enable_gravity_compensation(urdf_path)
 
     target_joint_poses = np.array([1.0, 2.0, 2.0, 1.5, 1.5, -1.57])
 

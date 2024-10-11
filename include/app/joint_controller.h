@@ -20,15 +20,13 @@ namespace arx
 class Arx5JointController
 {
   public:
-    Arx5JointController(RobotConfig robot_config, ControllerConfig controller_config, std::string interface_name);
-    Arx5JointController(std::string model, std::string interface_name);
+    Arx5JointController(RobotConfig robot_config, ControllerConfig controller_config, std::string interface_name,
+                        std::string urdf_path);
+    Arx5JointController(std::string model, std::string interface_name, std::string urdf_path);
     ~Arx5JointController();
 
     void send_recv_once();
-    void enable_background_send_recv();
-    void disable_background_send_recv();
-    void enable_gravity_compensation(std::string urdf_path);
-    void disable_gravity_compensation();
+    void recv_once();
 
     void set_joint_cmd(JointState new_cmd);
     std::tuple<JointState, JointState> get_joint_cmd();
@@ -54,7 +52,8 @@ class Arx5JointController
     ControllerConfig _controller_config;
     void _init_robot();
     void _background_send_recv();
-    bool _send_recv();
+    void _send_recv();
+    void _update_joint_state();
     void _over_current_protection();
     void _check_joint_state_sanity();
     void _enter_emergency_state();
@@ -74,7 +73,7 @@ class Arx5JointController
     std::mutex _state_mutex;
     void _update_output_cmd();
     int _start_time_us;
-    bool _enable_gravity_compensation = false;
+    // bool _enable_gravity_compensation = true;
     std::shared_ptr<Arx5Solver> _solver;
 };
 

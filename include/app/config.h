@@ -183,12 +183,16 @@ class ControllerConfig
     double default_gripper_kd;
     int over_current_cnt_max;
     double controller_dt;
+    bool gravity_compensation;
+    bool background_send_recv;
 
     ControllerConfig(std::string controller_type, VecDoF default_kp, VecDoF default_kd, double default_gripper_kp,
-                     double default_gripper_kd, int over_current_cnt_max, double controller_dt)
+                     double default_gripper_kd, int over_current_cnt_max, double controller_dt,
+                     bool gravity_compensation, bool background_send_recv)
         : controller_type(controller_type), default_kp(default_kp), default_kd(default_kd),
           default_gripper_kp(default_gripper_kp), default_gripper_kd(default_gripper_kd),
-          over_current_cnt_max(over_current_cnt_max), controller_dt(controller_dt)
+          over_current_cnt_max(over_current_cnt_max), controller_dt(controller_dt),
+          gravity_compensation(gravity_compensation), background_send_recv(background_send_recv)
     {
     }
 };
@@ -227,7 +231,9 @@ class ControllerConfigFactory
             5.0,                                                                // default_gripper_kp
             0.2,                                                                // default_gripper_kd
             20,                                                                 // over_current_cnt_max
-            0.002                                                               // controller_dt
+            0.002,                                                              // controller_dt
+            true,                                                               // gravity_compensation
+            true                                                                // background_send_recv
         );
         configurations["joint_controller_6"] = std::make_shared<ControllerConfig>(
             "joint_controller",                                           // controller_type
@@ -236,7 +242,9 @@ class ControllerConfigFactory
             5.0,                                                          // default_gripper_kp
             0.2,                                                          // default_gripper_kd
             20,                                                           // over_current_cnt_max
-            0.002                                                         // controller_dt
+            0.002,                                                        // controller_dt
+            true,                                                         // gravity_compensation
+            true                                                          // background_send_recv
         );
         configurations["cartesian_controller_7"] = std::make_shared<ControllerConfig>(
             "cartesian_controller",                                                 // controller_type
@@ -245,7 +253,9 @@ class ControllerConfigFactory
             5.0,                                                                    // default_gripper_kp
             0.2,                                                                    // default_gripper_kd
             20,                                                                     // over_current_cnt_max
-            0.005                                                                   // controller_dt
+            0.005,                                                                  // controller_dt
+            true,                                                                   // gravity_compensation
+            true                                                                    // background_send_recv
         );
         configurations["cartesian_controller_6"] = std::make_shared<ControllerConfig>(
             "cartesian_controller",                                          // controller_type
@@ -254,7 +264,9 @@ class ControllerConfigFactory
             5.0,                                                             // default_gripper_kp
             0.2,                                                             // default_gripper_kd
             20,                                                              // over_current_cnt_max
-            0.005                                                            // controller_dt
+            0.005,                                                           // controller_dt
+            true,                                                            // gravity_compensation
+            true                                                             // background_send_recv
         );
     }
     std::unordered_map<std::string, std::shared_ptr<ControllerConfig>> configurations;
