@@ -23,6 +23,31 @@ class MovingAverageXd
     Eigen::MatrixXd _window;
 };
 
+class InterpolatorXd
+{
+  public:
+    InterpolatorXd(int dof, std::string method);
+    ~InterpolatorXd() = default;
+    void init(Eigen::VectorXd start_pos, Eigen::VectorXd start_vel, double start_time, Eigen::VectorXd end_pos,
+              Eigen::VectorXd end_vel, double end_time);
+    void init_fixed(Eigen::VectorXd start_pos);
+    void update(double current_time, Eigen::VectorXd end_pos, Eigen::VectorXd end_vel, double end_time);
+    Eigen::VectorXd interpolate_pos(double time);
+    Eigen::VectorXd interpolate_vel(double time);
+
+  private:
+    int _dof;
+    bool _initialized = false;
+    bool _fixed = false;
+    std::string _method;
+    Eigen::VectorXd _start_pos;
+    Eigen::VectorXd _start_vel;
+    double _start_time;
+    Eigen::VectorXd _end_pos;
+    Eigen::VectorXd _end_vel;
+    double _end_time;
+}
+
 // std::string vec2str(const Eigen::VectorXd& vec, int precision = 3);
 
 } // namespace arx

@@ -6,6 +6,66 @@
 #include <sys/types.h>
 using namespace arx;
 
+Arx5ControllerBase::Arx5ControllerBase(RobotConfig robot_config, ControllerConfig controller_config,
+                                       std::string interface_name, std::string urdf_path)
+    : _can_handle(interface_name),
+      _logger(spdlog::stdout_color_mt(robot_config.robot_model + std::string("_") + interface_name)),
+      _robot_config(robot_config), _controller_config(controller_config)
+{
+    _logger->set_pattern("[%H:%M:%S %n %^%l%$] %v");
+    _solver = std::make_shared<Arx5Solver>(urdf_path, _robot_config.joint_dof, _robot_config.base_link_name,
+                                           _robot_config.eef_link_name, _robot_config.gravity_vector);
+    if (_robot_config.robot_model == "X5" && !_controller_config.shutdown_to_passive)
+    {
+        _logger->warn("When shutting down X5 robot arms, the motors have to be set to passive. "
+                      "_controller_config.shutdown_to_passive is set to `true`");
+        _controller_config.shutdown_to_passive = true;
+    }
+    _init_robot();
+    _background_send_recv_thread = std::thread(&Arx5ControllerBase::_background_send_recv, this);
+    _logger->info("Background send_recv task is running at ID: {}", syscall(SYS_gettid));
+}
+
+Arx5ControllerBase::~Arx5ControllerBase()
+{
+    if (_controller_config.shutdown_to_passive)
+    {
+        _logger->info("Set to damping before exit");
+        Gain damping_gain{_robot_config.joint_dof};
+        damping_gain.kd = _controller_config.default_kd;
+
+        // Increase damping if needed
+        // damping_gain.kd[0] *= 3;
+        // damping_gain.kd[1] *= 3;
+        // damping_gain.kd[2] *= 3;
+        // damping_gain.kd[3] *= 1.5;
+
+        set_gain(damping_gain);
+        {
+            std::lock_guard<std::mutex> guard(_cmd_mutex);
+            _input_joint_cmd.vel = VecDoF::Zero(_robot_config.joint_dof);
+            _input_joint_cmd.torque = VecDoF::Zero(_robot_config.joint_dof);
+            _input_joint_cmd.timestamp = 0;
+            _output_joint_cmd = _input_joint_cmd;
+            _intermediate_joint_cmd = _input_joint_cmd;
+        }
+        _background_send_recv_running = true;
+        _controller_config.gravity_compensation = false;
+        sleep_ms(2000);
+    }
+    else
+    {
+        _logger->info("Disconnect motors without setting to damping");
+    }
+
+    _destroy_background_threads = true;
+    _background_send_recv_thread.join();
+    _logger->info("background send_recv task joined");
+    spdlog::drop(_logger->name());
+    _logger.reset();
+    _solver.reset();
+}
+
 std::tuple<JointState, JointState> Arx5ControllerBase::get_joint_cmd()
 {
     std::lock_guard<std::mutex> guard(_cmd_mutex);
@@ -91,12 +151,15 @@ void Arx5ControllerBase::_init_robot()
     Gain gain{_robot_config.joint_dof};
     gain.kd = _controller_config.default_kd;
 
-    JointState init_joint_state = get_state();
+    JointState init_joint_state = get_joint_state();
     init_joint_state.vel = VecDoF::Zero(_robot_config.joint_dof);
     init_joint_state.torque = VecDoF::Zero(_robot_config.joint_dof);
 
-    set_joint_cmd(init_joint_state); // initialize joint command to zero
-    set_gain(gain);                  // set to damping by default
+    {
+        std::lock_guard<std::mutex> guard(_cmd_mutex);
+        _input_joint_cmd = init_joint_state;
+    }
+    set_gain(gain); // set to damping by default
 
     for (int j = 0; j < init_rounds; j++)
     {
@@ -112,7 +175,7 @@ void Arx5ControllerBase::_init_robot()
         throw std::runtime_error(
             "None of the motors are initialized. Please check the connection or power of the arm.");
     }
-    _input_joint_cmd = get_state();
+    _input_joint_cmd = get_joint_state();
     _input_joint_cmd.torque = init_joint_state.torque;
     _input_joint_cmd.vel = VecDoF::Zero(_robot_config.joint_dof);
     _input_joint_cmd.timestamp = 0;

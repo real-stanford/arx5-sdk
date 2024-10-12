@@ -46,6 +46,162 @@ Eigen::VectorXd MovingAverageXd::filter(Eigen::VectorXd new_data)
 //   str += "]";
 //   return str;
 // }
+
+InterpolatorXd::InterpolatorXd(int dof, std::string method)
+{
+    if (method != "linear" && method != "cubic")
+    {
+        throw std::invalid_argument("Invalid interpolation method: " + method +
+                                    ". Currently available: 'linear' or 'cubic'");
+    }
+    _dof = dof;
+    _method = method;
+    _initialized = false;
+}
+
+void InterpolatorXd::init(Eigen::VectorXd start_pos, Eigen::VectorXd start_vel, double start_time,
+                          Eigen::VectorXd end_pos, Eigen::VectorXd end_vel, double end_time)
+{
+    if (end_time < start_time)
+    {
+        throw std::invalid_argument("End time must be no less than start time");
+    }
+    else if (end_time == start_time && start_pos != end_pos)
+    {
+        throw std::invalid_argument("Start and end time are the same, but start and end positions are different");
+    }
+
+    _start_pos = start_pos;
+    _start_vel = start_vel;
+    _start_time = start_time;
+    _end_pos = end_pos;
+    _end_vel = end_vel;
+    _end_time = end_time;
+    _fixed = false;
+    _initialized = true;
+}
+
+void InterpolatorXd::init_fixed(Eigen::VectorXd start_pos)
+{
+    _start_pos = start_pos;
+    _fixed = true;
+    _initialized = true;
+}
+
+void InterpolatorXd::update(double current_time, Eigen::VectorXd end_pos, Eigen::VectorXd end_vel, double end_time)
+{
+    if (!_initialized)
+    {
+        throw std::runtime_error("Interpolator not initialized");
+    }
+
+    Eigen::VectorXd current_pos = interpolate_pos(current_time);
+    Eigen::VectorXd current_vel = interpolate_vel(current_time);
+
+    if (end_time < current_time)
+    {
+        throw std::invalid_argument("End time must be no less than current time");
+    }
+    else if (end_time == current_time && end_pos != _end_pos)
+    {
+        throw std::invalid_argument("Current and end time are the same, but current and end positions are different");
+    }
+
+    _start_pos = current_pos;
+    _start_vel = current_vel;
+    _start_time = current_time;
+    _end_pos = end_pos;
+    _end_vel = end_vel;
+    _end_time = end_time;
+}
+
+Eigen::VectorXd InterpolatorXd::interpolate_pos(double time)
+{
+    if (!_initialized)
+    {
+        throw std::runtime_error("Interpolator not initialized");
+    }
+
+    if (_fixed)
+    {
+        return _start_pos;
+    }
+
+    if (time <= _start_time)
+    {
+        return _start_pos;
+    }
+    else if (time >= _end_time)
+    {
+        return _end_pos;
+    }
+    if (_method == "linear")
+    {
+        return _start_pos + (_end_pos - _start_pos) * (time - _start_time) / (_end_time - _start_time);
+    }
+    else if (_method == "cubic")
+    {
+        Eigen::VectorXd pos = Eigen::VectorXd::Zero(_dof);
+        for (int i = 0; i < _dof; i++)
+        {
+            double t = (time - _start_time) / (_end_time - _start_time);
+            double t2 = t * t;
+            double t3 = t2 * t;
+            double a = 2 * t3 - 3 * t2 + 1;
+            double b = t3 - 2 * t2 + t;
+            double c = -2 * t3 + 3 * t2;
+            double d = t3 - t2;
+            pos(i) = a * _start_pos(i) + b * _start_vel(i) + c * _end_pos(i) + d * _end_vel(i);
+        }
+        return pos;
+    }
+}
+
+Eigen::VectorXd InterpolatorXd::interpolate_vel(double time)
+{
+    if (!_initialized)
+    {
+        throw std::runtime_error("Interpolator not initialized");
+    }
+
+    if (_fixed)
+    {
+        return Eigen::VectorXd::Zero(_dof);
+    }
+
+    if (time < _start_time || time > _end_time)
+    {
+        throw std::invalid_argument("Time must be within the range of start and end time");
+    }
+    else if (time == _start_time)
+    {
+        return _start_vel;
+    }
+    else if (time == _end_time)
+    {
+        return _end_vel;
+    }
+
+    if (_method == "linear")
+    {
+        return (_end_pos - _start_pos) / (_end_time - _start_time);
+    }
+    else if (_method == "cubic")
+    {
+        Eigen::VectorXd vel = Eigen::VectorXd::Zero(_dof);
+        for (int i = 0; i < _dof; i++)
+        {
+            double t = (time - _start_time) / (_end_time - _start_time);
+            double t2 = t * t;
+            double a = 6 * t2 - 6 * t;
+            double b = 3 * t2 - 4 * t + 1;
+            double c = -6 * t2 + 6 * t;
+            double d = 3 * t2 - 2 * t;
+            vel(i) = a * _start_pos(i) + b * _start_vel(i) + c * _end_pos(i) + d * _end_vel(i);
+        }
+        return vel;
+    }
+}
 } // namespace arx
 
 std::string vec2str(const Eigen::VectorXd &vec, int precision)

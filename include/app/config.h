@@ -190,15 +190,17 @@ class ControllerConfig
     //       pressing `ctrl-\` will directly kill the program so this process will be skipped
     // false: will keep the arm in the air when shutting down the controller (both `ctrl-\` and `ctrl-C`).
     //       X5 cannot be kept in the air.
+    std::string interpolation_method;
 
     ControllerConfig(std::string controller_type, VecDoF default_kp, VecDoF default_kd, double default_gripper_kp,
                      double default_gripper_kd, int over_current_cnt_max, double controller_dt,
-                     bool gravity_compensation, bool background_send_recv, bool shutdown_to_passive)
+                     bool gravity_compensation, bool background_send_recv, bool shutdown_to_passive,
+                     std::string interpolation_method)
         : controller_type(controller_type), default_kp(default_kp), default_kd(default_kd),
           default_gripper_kp(default_gripper_kp), default_gripper_kd(default_gripper_kd),
           over_current_cnt_max(over_current_cnt_max), controller_dt(controller_dt),
           gravity_compensation(gravity_compensation), background_send_recv(background_send_recv),
-          shutdown_to_passive(shutdown_to_passive)
+          shutdown_to_passive(shutdown_to_passive), interpolation_method(interpolation_method)
     {
     }
 };
@@ -240,7 +242,8 @@ class ControllerConfigFactory
             0.002,                                                              // controller_dt
             true,                                                               // gravity_compensation
             true,                                                               // background_send_recv
-            true                                                                // shutdown_to_passive
+            true,                                                               // shutdown_to_passive
+            "linear"                                                            // interpolation_method
         );
         configurations["joint_controller_6"] = std::make_shared<ControllerConfig>(
             "joint_controller",                                           // controller_type
@@ -252,7 +255,8 @@ class ControllerConfigFactory
             0.002,                                                        // controller_dt
             true,                                                         // gravity_compensation
             true,                                                         // background_send_recv
-            true                                                          // shutdown_to_passive
+            true,                                                         // shutdown_to_passive
+            "linear"                                                      // interpolation_method
         );
         configurations["cartesian_controller_7"] = std::make_shared<ControllerConfig>(
             "cartesian_controller",                                                 // controller_type
@@ -264,7 +268,8 @@ class ControllerConfigFactory
             0.005,                                                                  // controller_dt
             true,                                                                   // gravity_compensation
             true,                                                                   // background_send_recv
-            true                                                                    // shutdown_to_passive
+            true,                                                                   // shutdown_to_passive
+            "linear"                                                                // interpolation_method
         );
         configurations["cartesian_controller_6"] = std::make_shared<ControllerConfig>(
             "cartesian_controller",                                          // controller_type
@@ -276,7 +281,8 @@ class ControllerConfigFactory
             0.005,                                                           // controller_dt
             true,                                                            // gravity_compensation
             true,                                                            // background_send_recv
-            true                                                             // shutdown_to_passive
+            true,                                                            // shutdown_to_passive
+            "linear"                                                         // interpolation_method
         );
     }
     std::unordered_map<std::string, std::shared_ptr<ControllerConfig>> configurations;

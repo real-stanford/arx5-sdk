@@ -18,6 +18,10 @@ namespace arx
 {
 class Arx5ControllerBase // parent class for the other two controllers
 {
+  public:
+    Arx5ControllerBase(RobotConfig robot_config, ControllerConfig controller_config, std::string interface_name,
+                       std::string urdf_path);
+    virtual ~Arx5ControllerBase();
     std::tuple<JointState, JointState> get_joint_cmd();
     JointState get_joint_state();
     EEFState get_eef_state();
@@ -29,7 +33,7 @@ class Arx5ControllerBase // parent class for the other two controllers
     ControllerConfig get_controller_config();
     void set_log_level(spdlog::level::level_enum level);
 
-  private:
+  protected:
     RobotConfig _robot_config;
     ControllerConfig _controller_config;
 
@@ -54,6 +58,7 @@ class Arx5ControllerBase // parent class for the other two controllers
 
     int _start_time_us;
     std::shared_ptr<Arx5Solver> _solver;
+    InterpolatorXd _joint_interpolator{_robot_config.joint_dof, _ccontroller_config.interpolation_method};
 
     void _init_robot();
     void _update_joint_state();
@@ -64,5 +69,5 @@ class Arx5ControllerBase // parent class for the other two controllers
     void _over_current_protection();
     void _background_send_recv();
     void _enter_emergency_state();
-}
+};
 } // namespace arx
