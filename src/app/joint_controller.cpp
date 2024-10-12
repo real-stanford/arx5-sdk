@@ -16,6 +16,7 @@ Arx5JointController::Arx5JointController(RobotConfig robot_config, ControllerCon
     _solver = std::make_shared<Arx5Solver>(urdf_path, _robot_config.joint_dof, _robot_config.base_link_name,
                                            _robot_config.eef_link_name, _robot_config.gravity_vector);
     _init_robot();
+    _interp_start_joint_cmd = _input_joint_cmd;
     _background_send_recv_thread = std::thread(&Arx5JointController::_background_send_recv, this);
     _background_send_recv_running = _controller_config.background_send_recv;
     _logger->info("Background send_recv task is running at ID: {}", syscall(SYS_gettid));
@@ -107,7 +108,6 @@ void Arx5JointController::_init_robot()
     _input_joint_cmd.timestamp = 0;
     _output_joint_cmd = _input_joint_cmd;
     _intermediate_joint_cmd = _input_joint_cmd;
-    _interp_start_joint_cmd = _input_joint_cmd;
 }
 
 JointState Arx5JointController::get_state()
