@@ -33,6 +33,9 @@ class Arx5ControllerBase // parent class for the other two controllers
     ControllerConfig get_controller_config();
     void set_log_level(spdlog::level::level_enum level);
 
+    void reset_to_home();
+    void set_to_damping();
+
   protected:
     RobotConfig _robot_config;
     ControllerConfig _controller_config;
@@ -59,7 +62,7 @@ class Arx5ControllerBase // parent class for the other two controllers
     int _start_time_us;
     std::shared_ptr<Arx5Solver> _solver;
     InterpolatorXd _joint_interpolator{_robot_config.joint_dof, _ccontroller_config.interpolation_method};
-
+    Interpolator1d _gripper_interpolator{"linear"};
     void _init_robot();
     void _update_joint_state();
     void _update_output_cmd();
@@ -71,3 +74,5 @@ class Arx5ControllerBase // parent class for the other two controllers
     void _enter_emergency_state();
 };
 } // namespace arx
+
+#endif

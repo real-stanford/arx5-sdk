@@ -24,7 +24,6 @@ class Arx5CartesianController
     ~Arx5CartesianController();
 
     void set_eef_cmd(EEFState new_cmd);
-    std::tuple<EEFState, EEFState> get_eef_cmd();
     std::tuple<JointState, JointState> get_joint_cmd();
     EEFState get_eef_state();
     JointState get_joint_state();

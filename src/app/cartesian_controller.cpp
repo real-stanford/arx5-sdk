@@ -22,3 +22,24 @@ Arx5CartesianController::Arx5CartesianController(std::string model, std::string 
           interface_name, urdf_path)
 {
 }
+
+void Arx5CartesianController::set_eef_cmd(EEFState new_cmd)
+{
+    std::lock_guard<std::mutex> lock(_cmd_mutex);
+    std::tuple<bool, VecDoF> ik_results;
+    ik_results = _solver->inverse_kinematics(new_cmd.pose_6d, _joint_state.pos);
+    bool success = std::get<0>(ik_results);
+    VecDoF target_joint_pos = std::get<1>(ik_results);
+    if (success)
+    {
+        double current_time = get_timestamp();
+        // TODO: include velocity
+
+        std::lock_guard<std::mutex> lock(_interpolator_mutex);
+        _joint_interpolator.update(current_time, target_joint_pos, Pose6d::Zero(), new_cmd.timestamp);
+    }
+    else
+    {
+        _logger->warn("Inverse kinematics failed");
+    }
+}

@@ -119,12 +119,6 @@ void Arx5CartesianController::set_eef_cmd(EEFState new_cmd)
     _interp_start_eef_cmd = _output_eef_cmd;
 }
 
-std::tuple<EEFState, EEFState> Arx5CartesianController::get_eef_cmd()
-{
-    std::lock_guard<std::mutex> lock(_cmd_mutex);
-    return std::make_tuple(_input_eef_cmd, _output_eef_cmd);
-}
-
 EEFState Arx5CartesianController::get_eef_state()
 {
     std::lock_guard<std::mutex> lock(_state_mutex);

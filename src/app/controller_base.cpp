@@ -1,4 +1,5 @@
 #include "app/controller_base.h"
+#include "common.h"
 #include "utils.h"
 #include <array>
 #include <stdexcept>
@@ -110,11 +111,15 @@ void Arx5ControllerBase::set_gain(Gain new_gain)
             throw std::runtime_error("Cannot set kp to non-zero when the joint pos cmd is far from current pos.");
         }
     }
-    _gain = new_gain;
+    {
+        std::lock_guard<std::mutex> guard(_cmd_mutex);
+        _gain = new_gain;
+    }
 }
 
 Gain Arx5ControllerBase::get_gain()
 {
+    std::lock_guard<std::mutex> guard(_cmd_mutex);
     return _gain;
 }
 
@@ -133,6 +138,72 @@ ControllerConfig Arx5ControllerBase::get_controller_config()
 void Arx5ControllerBase::set_log_level(spdlog::level::level_enum level)
 {
     _logger->set_level(level);
+}
+
+void Arx5ControllerBase::reset_to_home()
+{
+    JointState init_state = get_joint_state();
+    Gain init_gain = get_gain();
+    double init_gripper_kp = _gain.gripper_kp;
+    double init_gripper_kd = _gain.gripper_kd;
+    Gain target_gain{_robot_config.joint_dof};
+    if (init_gain.kp.isZero())
+    {
+        _logger->info("Current kp is zero. Setting to default kp kd");
+        target_gain = Gain(_controller_config.default_kp, _controller_config.default_kd,
+                           _controller_config.default_gripper_kp, _controller_config.default_gripper_kd);
+    }
+    else
+    {
+        target_gain = init_gain;
+    }
+
+    JointState target_state{_robot_config.joint_dof};
+    _logger->debug("init_state.pos: {}, target_state.pos: {}", vec2str(init_state.pos), vec2str(target_state.pos));
+
+    // calculate the maximum joint position error
+    double max_pos_error = (init_state.pos - VecDoF::Zero(_robot_config.joint_dof)).cwiseAbs().maxCoeff();
+    max_pos_error = std::max(max_pos_error, init_state.gripper_pos * 2 / _robot_config.gripper_width);
+    // interpolate from current kp kd to default kp kd in max(max_pos_error, 0.5)s
+    // and keep the target for max(max_pos_error, 0.5)s
+    double wait_time = std::max(max_pos_error, 0.5);
+    int step_num = int(wait_time / _controller_config.controller_dt);
+    _logger->info("Start reset to home in {:.3f}s, max_pos_error: {:.3f}", std::max(max_pos_error, double(0.5)) + 0.5,
+                  max_pos_error);
+
+    bool prev_running = _background_send_recv_running;
+    _background_send_recv_running = true;
+    {
+        std::lock_guard<std::mutex> lock(_interpolator_mutex);
+        _joint_interpolator.update(get_timestamp(), target_state.pos, Pose6d::Zero(), get_timestamp() + wait_time);
+        _gripper_interpolator.update(get_timestamp(), target_state.gripper_pos, 0, get_timestamp() + wait_time);
+    }
+    Gain new_gain{_robot_config.joint_dof};
+    for (int i = 0; i <= step_num; i++)
+    {
+        double alpha = double(i) / step_num;
+        new_gain = init_gain * (1 - alpha) + target_gain * alpha;
+        set_gain(new_gain);
+        sleep_us(int(_controller_config.controller_dt * 1e6));
+    }
+
+    sleep_ms(500);
+    _logger->info("Finish reset to home");
+    _background_send_recv_running = prev_running;
+}
+
+void Arx5ControllerBase::set_to_damping()
+{
+    Gain damping_gain{_robot_config.joint_dof};
+    damping_gain.kd = _controller_config.default_kd;
+    set_gain(damping_gain);
+    sleep_ms(10);
+    JointState joint_state = get_joint_state();
+    {
+        std::lock_guard<std::mutex> lock(_interpolator_mutex);
+        _joint_interpolator.init_fixed(joint_state.pos);
+        _gripper_interpolator.init_fixed(joint_state.gripper_pos);
+    }
 }
 
 // ---------------------- Private functions ----------------------
@@ -323,7 +394,22 @@ void Arx5ControllerBase::_update_output_cmd()
 {
     std::lock_guard<std::mutex> guard(_cmd_mutex);
     JointState prev_output_cmd = _output_joint_cmd;
-    _output_joint_cmd = _input_joint_cmd;
+
+    // TODO: deal with non-zero velocity and torque for joint control
+    double timestamp = get_timestamp();
+    _output_joint_cmd.pos = _joint_interpolator.interpolate_pos(timestamp);
+    _output_joint_cmd.vel = VecDoF::Zero(_robot_config.joint_dof);
+    _output_joint_cmd.torque = VecDoF::Zero(_robot_config.joint_dof);
+    _output_joint_cmd.gripper_pos = _gripper_interpolator.interpolate_pos(timestamp);
+    _output_joint_cmd.gripper_vel = 0;
+    _output_joint_cmd.gripper_torque = 0;
+    _output_joint_cmd.timestamp = timestamp;
+
+    if (_controller_config.gravity_compensation)
+    {
+        _output_joint_cmd.torque += _solver->inverse_dynamics(_joint_state.pos, VecDoF::Zero(_robot_config.joint_dof),
+                                                              VecDoF::Zero(_robot_config.joint_dof));
+    }
     // Joint velocity clipping
     double dt = _controller_config.controller_dt;
     for (int i = 0; i < _robot_config.joint_dof; ++i)
@@ -441,29 +527,32 @@ void Arx5ControllerBase::_send_recv()
     for (int i = 0; i < _robot_config.joint_dof; i++)
     {
         int start_send_motor_time_us = get_time_us();
-        if (_robot_config.motor_type[i] == MotorType::EC_A4310)
         {
-            _can_handle.send_EC_motor_cmd(_robot_config.motor_id[i], _gain.kp[i], _gain.kd[i], _output_joint_cmd.pos[i],
-                                          _output_joint_cmd.vel[i],
-                                          _output_joint_cmd.torque[i] / torque_constant_EC_A4310);
-        }
-        else if (_robot_config.motor_type[i] == MotorType::DM_J4310)
-        {
+            std::lock_guard<std::mutex> lock(_cmd_mutex);
+            if (_robot_config.motor_type[i] == MotorType::EC_A4310)
+            {
+                _can_handle.send_EC_motor_cmd(_robot_config.motor_id[i], _gain.kp[i], _gain.kd[i],
+                                              _output_joint_cmd.pos[i], _output_joint_cmd.vel[i],
+                                              _output_joint_cmd.torque[i] / torque_constant_EC_A4310);
+            }
+            else if (_robot_config.motor_type[i] == MotorType::DM_J4310)
+            {
 
-            _can_handle.send_DM_motor_cmd(_robot_config.motor_id[i], _gain.kp[i], _gain.kd[i], _output_joint_cmd.pos[i],
-                                          _output_joint_cmd.vel[i],
-                                          _output_joint_cmd.torque[i] / torque_constant_DM_J4310);
-        }
-        else if (_robot_config.motor_type[i] == MotorType::DM_J4340)
-        {
-            _can_handle.send_DM_motor_cmd(_robot_config.motor_id[i], _gain.kp[i], _gain.kd[i], _output_joint_cmd.pos[i],
-                                          _output_joint_cmd.vel[i],
-                                          _output_joint_cmd.torque[i] / torque_constant_DM_J4340);
-        }
-        else
-        {
-            _logger->error("Motor type not supported.");
-            return;
+                _can_handle.send_DM_motor_cmd(_robot_config.motor_id[i], _gain.kp[i], _gain.kd[i],
+                                              _output_joint_cmd.pos[i], _output_joint_cmd.vel[i],
+                                              _output_joint_cmd.torque[i] / torque_constant_DM_J4310);
+            }
+            else if (_robot_config.motor_type[i] == MotorType::DM_J4340)
+            {
+                _can_handle.send_DM_motor_cmd(_robot_config.motor_id[i], _gain.kp[i], _gain.kd[i],
+                                              _output_joint_cmd.pos[i], _output_joint_cmd.vel[i],
+                                              _output_joint_cmd.torque[i] / torque_constant_DM_J4340);
+            }
+            else
+            {
+                _logger->error("Motor type not supported.");
+                return;
+            }
         }
         int finish_send_motor_time_us = get_time_us();
         sleep_us(communicate_sleep_us - (finish_send_motor_time_us - start_send_motor_time_us));

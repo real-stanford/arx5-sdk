@@ -23,6 +23,29 @@ class MovingAverageXd
     Eigen::MatrixXd _window;
 };
 
+class Interpolator1d
+{
+  public:
+    Interpolator1d(std::string method);
+    ~Interpolator1d() = default;
+    void init(double start_pos, double start_vel, double start_time, double end_pos, double end_vel, double end_time);
+    void init_fixed(double start_pos);
+    void update(double current_time, double end_pos, double end_vel, double end_time);
+    double interpolate_pos(double time);
+    double interpolate_vel(double time);
+
+  private:
+    bool _initialized = false;
+    bool _fixed = false;
+    std::string _method;
+    double _start_pos;
+    double _start_vel;
+    double _start_time;
+    double _end_pos;
+    double _end_vel;
+    double _end_time;
+};
+
 class InterpolatorXd
 {
   public:
@@ -46,7 +69,7 @@ class InterpolatorXd
     Eigen::VectorXd _end_pos;
     Eigen::VectorXd _end_vel;
     double _end_time;
-}
+};
 
 // std::string vec2str(const Eigen::VectorXd& vec, int precision = 3);
 

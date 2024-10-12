@@ -28,13 +28,6 @@ class Arx5CartesianController : public Arx5ControllerBase
     ~Arx5CartesianController() override;
 
     void set_eef_cmd(EEFState new_cmd);
-    EEFState get_eef_cmd();
-
-    void reset_to_home();
-    void set_to_damping();
-
-  private:
-    EEFState _input_eef_cmd;
 };
 } // namespace arx
 
