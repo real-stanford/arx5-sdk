@@ -18,7 +18,7 @@ import click
 def start_teleop_recording(controller: Arx5CartesianController):
 
     ori_speed = 1.5
-    pos_speed = 1.2
+    pos_speed = 0.8
     gripper_speed = 0.04
     target_pose_6d = controller.get_home_pose()
 
@@ -32,7 +32,7 @@ def start_teleop_recording(controller: Arx5CartesianController):
     controller_config = controller.get_controller_config()
 
     with SharedMemoryManager() as shm_manager:
-        with Spacemouse(shm_manager=shm_manager, deadzone=0.3, max_value=500) as sm:
+        with Spacemouse(shm_manager=shm_manager, deadzone=0.2, max_value=500) as sm:
 
             def get_filtered_spacemouse_output(sm: Spacemouse):
                 state = sm.get_motion_state_transformed()
@@ -79,7 +79,7 @@ def start_teleop_recording(controller: Arx5CartesianController):
                     gripper_cmd = -1
                 else:
                     gripper_cmd = 0
-                # print(state)
+                # print(state, target_gripper_pos)
                 target_pose_6d[:3] += state[:3] * pos_speed * cmd_dt
                 target_pose_6d[3:] += state[3:] * ori_speed * cmd_dt
                 target_gripper_pos += gripper_cmd * gripper_speed * cmd_dt

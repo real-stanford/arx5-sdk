@@ -25,6 +25,7 @@ class Arx5ControllerBase // parent class for the other two controllers
     std::tuple<JointState, JointState> get_joint_cmd();
     JointState get_joint_state();
     EEFState get_eef_state();
+    Pose6d get_home_pose();
     void set_gain(Gain new_gain);
     Gain get_gain();
 

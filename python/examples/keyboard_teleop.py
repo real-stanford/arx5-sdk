@@ -19,14 +19,15 @@ import click
 
 def start_keyboard_teleop(controller: Arx5CartesianController):
 
-    ori_speed = 0.6
-    pos_speed = 0.2
+    ori_speed = 1.0
+    pos_speed = 0.4
     gripper_speed = 0.04
     target_pose_6d = controller.get_home_pose()
 
     target_gripper_pos = 0.0
-
-    window_size = 20
+    cmd_dt = 0.01
+    look_ahead_time = 0.1
+    window_size = 5
     keyboard_queue = Queue(window_size)
     robot_config = controller.get_robot_config()
     controller_config = controller.get_controller_config()
@@ -130,24 +131,22 @@ def start_keyboard_teleop(controller: Arx5CartesianController):
         else:
             gripper_cmd = 0
 
-        target_pose_6d[:3] += state[:3] * pos_speed * controller_config.controller_dt
-        target_pose_6d[3:] += state[3:] * ori_speed * controller_config.controller_dt
-        target_gripper_pos += (
-            gripper_cmd * gripper_speed * controller_config.controller_dt
-        )
+        target_pose_6d[:3] += state[:3] * pos_speed * cmd_dt
+        target_pose_6d[3:] += state[3:] * ori_speed * cmd_dt
+        target_gripper_pos += gripper_cmd * gripper_speed * cmd_dt
         if target_gripper_pos >= robot_config.gripper_width:
             target_gripper_pos = robot_config.gripper_width
         elif target_gripper_pos <= 0:
             target_gripper_pos = 0
         loop_cnt += 1
-        while (
-            time.monotonic() < start_time + loop_cnt * controller_config.controller_dt
-        ):
+        while time.monotonic() < start_time + loop_cnt * cmd_dt:
             pass
 
+        current_timestamp = controller.get_timestamp()
         eef_cmd = EEFState()
         eef_cmd.pose_6d()[:] = target_pose_6d
         eef_cmd.gripper_pos = target_gripper_pos
+        eef_cmd.timestamp = current_timestamp + look_ahead_time
         controller.set_eef_cmd(eef_cmd)
 
 

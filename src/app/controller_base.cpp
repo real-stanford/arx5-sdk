@@ -89,9 +89,9 @@ EEFState Arx5ControllerBase::get_eef_state()
     Pose6d tool_pose = _solver->forward_kinematics(joint_state.pos);
     eef_state.pose_6d = tool_pose;
     eef_state.timestamp = joint_state.timestamp;
-    eef_state.gripper_pos = _joint_state.gripper_pos;
-    eef_state.gripper_vel = _joint_state.gripper_vel;
-    eef_state.gripper_torque = _joint_state.gripper_torque;
+    eef_state.gripper_pos = joint_state.gripper_pos;
+    eef_state.gripper_vel = joint_state.gripper_vel;
+    eef_state.gripper_torque = joint_state.gripper_torque;
     return eef_state;
 }
 
@@ -653,4 +653,9 @@ void Arx5ControllerBase::_background_send_recv()
             _logger->debug("Background send_recv task is running too slow, time: {} us", elapsed_time_us);
         }
     }
+}
+
+Pose6d Arx5ControllerBase::get_home_pose()
+{
+    return _solver->forward_kinematics(VecDoF::Zero(_robot_config.joint_dof));
 }

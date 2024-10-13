@@ -37,14 +37,10 @@ void Arx5CartesianController::set_eef_cmd(EEFState new_cmd)
 
         std::lock_guard<std::mutex> lock(_interpolator_mutex);
         _joint_interpolator.update(current_time, target_joint_pos, Pose6d::Zero(), new_cmd.timestamp);
+        _gripper_interpolator.update(current_time, new_cmd.gripper_pos, 0, new_cmd.timestamp);
     }
     else
     {
         _logger->warn("Inverse kinematics failed");
     }
-}
-
-Pose6d Arx5CartesianController::get_home_pose()
-{
-    return _solver->forward_kinematics(VecDoF::Zero(_robot_config.joint_dof));
 }
