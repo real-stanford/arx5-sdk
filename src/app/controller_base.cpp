@@ -26,6 +26,7 @@ Arx5ControllerBase::Arx5ControllerBase(RobotConfig robot_config, ControllerConfi
     }
     _init_robot();
     _background_send_recv_thread = std::thread(&Arx5ControllerBase::_background_send_recv, this);
+    _background_send_recv_running = _controller_config.background_send_recv;
     _logger->info("Background send_recv task is running at ID: {}", syscall(SYS_gettid));
 }
 

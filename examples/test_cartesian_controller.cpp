@@ -5,7 +5,7 @@
 
 using namespace arx;
 
-Arx5CartesianController *arx5_cartesian_controller = new Arx5CartesianController("L5", "can3", "../models/arx5.urdf");
+Arx5CartesianController *arx5_cartesian_controller = new Arx5CartesianController("L5", "can0", "../models/arx5.urdf");
 
 void signal_handler(int signal)
 {
@@ -22,6 +22,7 @@ int main()
     Gain gain{dof};
     Arx5Solver solver("../models/arx5.urdf", dof);
     arx5_cartesian_controller->reset_to_home();
+    arx5_cartesian_controller->set_log_level(spdlog::level::debug);
     gain.kd = (arx5_cartesian_controller->get_controller_config()).default_kd / 10;
     std::signal(SIGINT, signal_handler);
     arx5_cartesian_controller->set_gain(gain);
