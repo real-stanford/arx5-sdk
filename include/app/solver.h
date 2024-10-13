@@ -22,6 +22,7 @@
 #include <kdl/kdl.hpp>
 #include <kdl/segment.hpp>
 #include <kdl/tree.hpp>
+#include <kdl_parser/kdl_parser.hpp>
 #include <math.h>
 #include <stdlib.h>
 #include <string.h>
@@ -43,6 +44,22 @@ class Arx5Solver
     std::tuple<bool, Eigen::VectorXd> inverse_kinematics(Eigen::Matrix<double, 6, 1> target_pose_6d,
                                                          Eigen::VectorXd current_joint_pos);
     Eigen::Matrix<double, 6, 1> forward_kinematics(Eigen::VectorXd joint_pos);
+
+  private:
+    // parameters for ik solver
+    const double _EPS = 1E-5;
+    const int _MAXITER = 500;
+    const double _EPS_JOINTS = 1E-15;
+    const int _JOINT_DOF;
+
+    // These variables should be class members and will be used when solvers are called.
+    KDL::Tree _tree;
+    KDL::Chain _chain;
+    KDL::Chain _chain_without_fixed_joints;
+
+    std::shared_ptr<KDL::ChainIkSolverPos_LMA> _ik_solver;
+    std::shared_ptr<KDL::ChainFkSolverPos_recursive> _fk_solver;
+    std::shared_ptr<KDL::ChainIdSolver_RNE> _id_solver;
 };
 } // namespace arx
 

@@ -48,6 +48,7 @@ target_link_libraries(ArxJointController
 )
 add_library(ArxCartesianController SHARED
     src/app/cartesian_controller.cpp
+    src/app/controller_base.cpp
     src/utils.cpp
 )
 target_link_libraries(ArxCartesianController

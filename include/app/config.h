@@ -265,7 +265,7 @@ class ControllerConfigFactory
             5.0,                                                                    // default_gripper_kp
             0.2,                                                                    // default_gripper_kd
             20,                                                                     // over_current_cnt_max
-            0.005,                                                                  // controller_dt
+            0.002,                                                                  // controller_dt
             true,                                                                   // gravity_compensation
             true,                                                                   // background_send_recv
             true,                                                                   // shutdown_to_passive
@@ -278,7 +278,7 @@ class ControllerConfigFactory
             5.0,                                                             // default_gripper_kp
             0.2,                                                             // default_gripper_kd
             20,                                                              // over_current_cnt_max
-            0.005,                                                           // controller_dt
+            0.002,                                                           // controller_dt
             true,                                                            // gravity_compensation
             true,                                                            // background_send_recv
             true,                                                            // shutdown_to_passive

@@ -280,6 +280,15 @@ void InterpolatorXd::update(double current_time, Eigen::VectorXd end_pos, Eigen:
     Eigen::VectorXd current_pos(_dof);
     Eigen::VectorXd current_vel(_dof);
 
+    if (end_time < current_time)
+    {
+        throw std::invalid_argument("End time must be no less than current time");
+    }
+    else if (end_time == current_time && end_pos != _end_pos)
+    {
+        throw std::invalid_argument("Current and end time are the same, but current and end positions are different");
+    }
+
     if (current_time > _end_time)
     {
         current_vel = Eigen::VectorXd::Zero(_dof);
@@ -293,15 +302,6 @@ void InterpolatorXd::update(double current_time, Eigen::VectorXd end_pos, Eigen:
     {
         current_pos = interpolate_pos(current_time);
         current_vel = interpolate_vel(current_time);
-    }
-
-    if (end_time < current_time)
-    {
-        throw std::invalid_argument("End time must be no less than current time");
-    }
-    else if (end_time == current_time && end_pos != _end_pos)
-    {
-        throw std::invalid_argument("Current and end time are the same, but current and end positions are different");
     }
 
     _start_pos = current_pos;

@@ -5,7 +5,7 @@
 
 using namespace arx;
 
-Arx5CartesianController *arx5_cartesian_controller = new Arx5CartesianController("X5", "can0", "../models/arx5.urdf");
+Arx5CartesianController *arx5_cartesian_controller = new Arx5CartesianController("L5", "can3", "../models/arx5.urdf");
 
 void signal_handler(int signal)
 {
@@ -25,7 +25,9 @@ int main()
     gain.kd = (arx5_cartesian_controller->get_controller_config()).default_kd / 10;
     std::signal(SIGINT, signal_handler);
     arx5_cartesian_controller->set_gain(gain);
+    double current_time = arx5_cartesian_controller->get_timestamp();
     cmd.pose_6d = arx5_cartesian_controller->get_home_pose();
+    cmd.timestamp = current_time + 0.1;
     arx5_cartesian_controller->set_eef_cmd(cmd);
     while (true)
     {

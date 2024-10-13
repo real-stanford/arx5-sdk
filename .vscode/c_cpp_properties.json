@@ -7,6 +7,7 @@
                 "${workspaceFolder}/include",
                 "${HOME}/miniforge3/envs/arx-py310/include",
                 "${HOME}/miniforge3/envs/arx-py310/include/eigen3",
+                "${HOME}/miniforge3/envs/arx-py310/include/python3.10",
                 "${HOME}/miniforge3/envs/arx-py310/include/kdl_parser",
             ],
             "defines": [],

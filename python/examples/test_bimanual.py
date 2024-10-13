@@ -20,23 +20,16 @@ def easeInOutQuad(t):
 
 def main():
     np.set_printoptions(precision=3, suppress=True)
-    arx5_0 = arx5.Arx5JointController("X5", "can0")
-    arx5_1 = arx5.Arx5JointController("X5", "can1")
+    arx5_0 = arx5.Arx5JointController("X5", "can0", "../models/arx5.urdf")
+    arx5_1 = arx5.Arx5JointController("X5", "can1", "../models/arx5.urdf")
     robot_config = arx5_0.get_robot_config()
     controller_config = arx5_0.get_controller_config()
 
-    arx5_0.enable_background_send_recv()
     arx5_0.reset_to_home()
-    arx5_0.enable_gravity_compensation("../models/arx5.urdf")
-    arx5_1.enable_background_send_recv()
     arx5_1.reset_to_home()
-    arx5_1.enable_gravity_compensation("../models/arx5.urdf")
 
     target_joint_poses = np.array([1.0, 2.0, 2.0, 1.5, 1.5, -1.57])
     step_num = 1500  # 3s
-    USE_TIMER = True
-    if not USE_TIMER:
-        arx5_0.disable_background_send_recv()
 
     for i in range(step_num):
         cmd = arx5.JointState(robot_config.joint_dof)
@@ -45,9 +38,6 @@ def main():
         cmd.gripper_pos = easeInOutQuad((i / (step_num - 1))) * 0.08
         arx5_0.set_joint_cmd(cmd)
         arx5_1.set_joint_cmd(cmd)
-        if not USE_TIMER:
-            arx5_0.send_recv_once()
-            arx5_1.send_recv_once()
         JointState = arx5_0.get_state()
         JointState = arx5_1.get_state()
         arm_dof_pos = JointState.pos().copy()
@@ -64,9 +54,6 @@ def main():
         cmd.gripper_pos = easeInOutQuad((1 - i / (step_num - 1))) * 0.08
         arx5_0.set_joint_cmd(cmd)
         arx5_1.set_joint_cmd(cmd)
-        if not USE_TIMER:
-            arx5_0.send_recv_once()
-            arx5_1.send_recv_once()
         time.sleep(controller_config.controller_dt)
         JointState = arx5_0.get_state()
         JointState = arx5_1.get_state()

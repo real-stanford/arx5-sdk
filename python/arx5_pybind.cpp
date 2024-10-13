@@ -1,6 +1,7 @@
 #include "app/cartesian_controller.h"
 #include "app/common.h"
 #include "app/config.h"
+#include "app/controller_base.h"
 #include "app/joint_controller.h"
 #include "hardware/arx_can.h"
 #include "spdlog/spdlog.h"
@@ -123,6 +124,7 @@ PYBIND11_MODULE(arx5_interface, m)
         .def_readwrite("background_send_recv", &ControllerConfig::background_send_recv)
         .def_readwrite("gravity_compensation", &ControllerConfig::gravity_compensation)
         .def_readwrite("shutdown_to_passive", &ControllerConfig::shutdown_to_passive)
+        .def_readwrite("interpolation_method", &ControllerConfig::interpolation_method)
         .def_readwrite("controller_dt", &ControllerConfig::controller_dt);
     py::class_<RobotConfigFactory>(m, "RobotConfigFactory")
         .def_static("get_instance", &RobotConfigFactory::get_instance, py::return_value_policy::reference)

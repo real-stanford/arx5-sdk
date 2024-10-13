@@ -43,3 +43,8 @@ void Arx5CartesianController::set_eef_cmd(EEFState new_cmd)
         _logger->warn("Inverse kinematics failed");
     }
 }
+
+Pose6d Arx5CartesianController::get_home_pose()
+{
+    return _solver->forward_kinematics(VecDoF::Zero(_robot_config.joint_dof));
+}

@@ -14,9 +14,9 @@ solver = arx5.Arx5Solver(
     # "../models/arx5_gopro.urdf",
     "../models/arx7_left.urdf",
     joint_dof,
-    "base_link",
-    "eef_link",
-    np.array([0, 0, -9.807]),
+    # "base_link",
+    # "eef_link",
+    # np.array([0, 0, -9.807], dtype=np.float64),
 )
 
 # solver = arx5.Arx5Solver("../models/arx5_gopro.urdf", joint_dof)

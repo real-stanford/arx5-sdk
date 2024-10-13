@@ -1,5 +1,5 @@
 #include "app/controller_base.h"
-#include "common.h"
+#include "app/common.h"
 #include "utils.h"
 #include <array>
 #include <stdexcept>
@@ -13,9 +13,11 @@ Arx5ControllerBase::Arx5ControllerBase(RobotConfig robot_config, ControllerConfi
       _logger(spdlog::stdout_color_mt(robot_config.robot_model + std::string("_") + interface_name)),
       _robot_config(robot_config), _controller_config(controller_config)
 {
+    _logger->info("Start initializing solver");
     _logger->set_pattern("[%H:%M:%S %n %^%l%$] %v");
     _solver = std::make_shared<Arx5Solver>(urdf_path, _robot_config.joint_dof, _robot_config.base_link_name,
                                            _robot_config.eef_link_name, _robot_config.gravity_vector);
+    _logger->info("Done initializing solver");
     if (_robot_config.robot_model == "X5" && !_controller_config.shutdown_to_passive)
     {
         _logger->warn("When shutting down X5 robot arms, the motors have to be set to passive. "
@@ -212,12 +214,14 @@ void Arx5ControllerBase::_init_robot()
 {
     // Background send receive is disabled during initialization
     int init_rounds = 10; // Make sure the states of each motor is fully initialized
+    _logger->info("Enter _init_robot");
     for (int j = 0; j < init_rounds; j++)
     {
         _recv();
         _check_joint_state_sanity();
         _over_current_protection();
     }
+    _logger->info("Done receiving only");
 
     Gain gain{_robot_config.joint_dof};
     gain.kd = _controller_config.default_kd;
@@ -225,19 +229,11 @@ void Arx5ControllerBase::_init_robot()
     JointState init_joint_state = get_joint_state();
     init_joint_state.vel = VecDoF::Zero(_robot_config.joint_dof);
     init_joint_state.torque = VecDoF::Zero(_robot_config.joint_dof);
-
     {
         std::lock_guard<std::mutex> guard(_cmd_mutex);
         _input_joint_cmd = init_joint_state;
     }
     set_gain(gain); // set to damping by default
-
-    for (int j = 0; j < init_rounds; j++)
-    {
-        _send_recv();
-        _check_joint_state_sanity();
-        _over_current_protection();
-    }
 
     // Check whether any motor has non-zero position
     if (_joint_state.pos == VecDoF::Zero(_robot_config.joint_dof))
@@ -246,12 +242,27 @@ void Arx5ControllerBase::_init_robot()
         throw std::runtime_error(
             "None of the motors are initialized. Please check the connection or power of the arm.");
     }
+    _logger->info("Done setting gain");
     _input_joint_cmd = get_joint_state();
     _input_joint_cmd.torque = init_joint_state.torque;
     _input_joint_cmd.vel = VecDoF::Zero(_robot_config.joint_dof);
     _input_joint_cmd.timestamp = 0;
     _output_joint_cmd = _input_joint_cmd;
     _intermediate_joint_cmd = _input_joint_cmd;
+    {
+        std::lock_guard<std::mutex> lock(_interpolator_mutex);
+        _joint_interpolator.init_fixed(_joint_state.pos);
+        _gripper_interpolator.init_fixed(_joint_state.gripper_pos);
+    }
+    _logger->info("Initialized interpolator");
+
+    for (int j = 0; j < init_rounds; j++)
+    {
+        _send_recv();
+        _check_joint_state_sanity();
+        _over_current_protection();
+    }
+    _logger->info("Robot initialized");
 }
 
 void Arx5ControllerBase::_check_joint_state_sanity()

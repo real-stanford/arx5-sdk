@@ -25,9 +25,10 @@ class Arx5CartesianController : public Arx5ControllerBase
     Arx5CartesianController(RobotConfig robot_config, ControllerConfig controller_config, std::string interface_name,
                             std::string urdf_path);
     Arx5CartesianController(std::string model, std::string interface_name, std::string urdf_path);
-    ~Arx5CartesianController() override;
 
     void set_eef_cmd(EEFState new_cmd);
+
+    Pose6d get_home_pose();
 };
 } // namespace arx
 
