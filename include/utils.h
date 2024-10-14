@@ -2,6 +2,7 @@
 #define UTILS_H
 #include "app/common.h"
 #include <Eigen/Core>
+#include <string>
 
 namespace arx
 {
@@ -33,6 +34,7 @@ class Interpolator1d
     void update(double current_time, double end_pos, double end_vel, double end_time);
     double interpolate_pos(double time);
     double interpolate_vel(double time);
+    std::string to_string();
 
   private:
     bool _initialized = false;
@@ -57,6 +59,7 @@ class InterpolatorXd
     void update(double current_time, Eigen::VectorXd end_pos, Eigen::VectorXd end_vel, double end_time);
     Eigen::VectorXd interpolate_pos(double time);
     Eigen::VectorXd interpolate_vel(double time);
+    std::string to_string();
 
   private:
     int _dof;

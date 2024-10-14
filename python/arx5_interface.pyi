@@ -44,6 +44,7 @@ class ControllerConfig:
     gravity_compensation: bool
     background_send_recv: bool
     shutdown_to_passive: bool
+    interpolation_method: str
 
 class RobotConfigFactory:
     @classmethod
@@ -177,12 +178,20 @@ class Arx5CartesianController:
 
 class Arx5Solver:
     @overload
-    def __init__(self, urdf_path: str, joint_dof: int) -> None: ...
+    def __init__(
+        self,
+        urdf_path: str,
+        joint_dof: int,
+        joint_pos_min: npt.NDArray[np.float64],
+        joint_pos_max: npt.NDArray[np.float64],
+    ) -> None: ...
     @overload
     def __init__(
         self,
         urdf_path: str,
         joint_dof: int,
+        joint_pos_min: npt.NDArray[np.float64],
+        joint_pos_max: npt.NDArray[np.float64],
         base_link: str,
         eef_link: str,
         gravity_vector: npt.NDArray[np.float64],
@@ -197,6 +206,12 @@ class Arx5Solver:
         self,
         target_pose_6d: npt.NDArray[np.float64],
         current_joint_pos: npt.NDArray[np.float64],
+    ) -> Tuple[bool, npt.NDArray[np.float64]]: ...
+    def multi_trial_ik(
+        self,
+        target_pose_6d: npt.NDArray[np.float64],
+        current_joint_pos: npt.NDArray[np.float64],
+        additional_trial_num: int,
     ) -> Tuple[bool, npt.NDArray[np.float64]]: ...
     def forward_kinematics(
         self, joint_pos: npt.NDArray[np.float64]

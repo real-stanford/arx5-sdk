@@ -15,7 +15,8 @@ Arx5ControllerBase::Arx5ControllerBase(RobotConfig robot_config, ControllerConfi
 {
     _logger->info("Start initializing solver");
     _logger->set_pattern("[%H:%M:%S %n %^%l%$] %v");
-    _solver = std::make_shared<Arx5Solver>(urdf_path, _robot_config.joint_dof, _robot_config.base_link_name,
+    _solver = std::make_shared<Arx5Solver>(urdf_path, _robot_config.joint_dof, _robot_config.joint_pos_min,
+                                           _robot_config.joint_pos_max, _robot_config.base_link_name,
                                            _robot_config.eef_link_name, _robot_config.gravity_vector);
     _logger->info("Done initializing solver");
     if (_robot_config.robot_model == "X5" && !_controller_config.shutdown_to_passive)
@@ -433,9 +434,10 @@ void Arx5ControllerBase::_update_output_cmd()
             double max_vel = _robot_config.joint_vel_max[i];
             if (std::abs(delta_pos) > max_vel * dt)
             {
-                _output_joint_cmd.pos[i] = prev_output_cmd.pos[i] + max_vel * dt * delta_pos / std::abs(delta_pos);
+                double new_pos = prev_output_cmd.pos[i] + max_vel * dt * delta_pos / std::abs(delta_pos);
                 _logger->debug("Joint {} pos {:.3f} pos cmd clipped: {:.3f} to {:.3f}", i, _joint_state.pos[i],
-                               _output_joint_cmd.pos[i], _output_joint_cmd.pos[i]);
+                               _output_joint_cmd.pos[i], new_pos);
+                _output_joint_cmd.pos[i] = new_pos;
             }
         }
         else
@@ -449,12 +451,13 @@ void Arx5ControllerBase::_update_output_cmd()
             double gripper_delta_pos = _output_joint_cmd.gripper_pos - prev_output_cmd.gripper_pos;
             if (std::abs(gripper_delta_pos) / dt > _robot_config.gripper_vel_max)
             {
-                _output_joint_cmd.gripper_pos = prev_output_cmd.gripper_pos + _robot_config.gripper_vel_max * dt *
-                                                                                  gripper_delta_pos /
-                                                                                  std::abs(gripper_delta_pos);
+                double new_gripper_pos = prev_output_cmd.gripper_pos + _robot_config.gripper_vel_max * dt *
+                                                                           gripper_delta_pos /
+                                                                           std::abs(gripper_delta_pos);
                 if (std::abs(_output_joint_cmd.gripper_pos - _output_joint_cmd.gripper_pos) >= 0.001)
                     _logger->debug("Gripper pos cmd clipped: {:.3f} to {:.3f}", _output_joint_cmd.gripper_pos,
                                    _output_joint_cmd.gripper_pos);
+                _output_joint_cmd.gripper_pos = new_gripper_pos;
             }
         }
         else

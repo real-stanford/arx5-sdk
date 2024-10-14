@@ -7,7 +7,15 @@ import numpy as np
 ROOT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(ROOT_DIR)
 os.chdir(ROOT_DIR)
-from arx5_interface import Arx5CartesianController, EEFState, Gain, LogLevel
+from arx5_interface import (
+    Arx5CartesianController,
+    ControllerConfig,
+    ControllerConfigFactory,
+    EEFState,
+    Gain,
+    LogLevel,
+    RobotConfigFactory,
+)
 from peripherals.spacemouse_shared_memory import Spacemouse
 from multiprocessing.managers import SharedMemoryManager
 
@@ -103,7 +111,15 @@ def start_teleop_recording(controller: Arx5CartesianController):
 @click.argument("interface")  # can bus name (can0 etc.)
 @click.option("--urdf_path", "-u", default="../models/arx5.urdf", help="URDF file path")
 def main(model: str, interface: str, urdf_path: str):
-    controller = Arx5CartesianController(model, interface, urdf_path)
+
+    robot_config = RobotConfigFactory.get_instance().get_config(model)
+    controller_config = ControllerConfigFactory.get_instance().get_config(
+        "cartesian_controller", robot_config.joint_dof
+    )
+    # controller_config.interpolation_method = "cubic"
+    controller = Arx5CartesianController(
+        robot_config, controller_config, interface, urdf_path
+    )
     controller.reset_to_home()
 
     robot_config = controller.get_robot_config()

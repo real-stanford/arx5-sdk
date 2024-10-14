@@ -18,9 +18,10 @@ int main()
 {
     EEFState cmd;
     int loop_cnt = 0;
-    int dof = arx5_cartesian_controller->get_robot_config().joint_dof;
+    RobotConfig robot_config = arx5_cartesian_controller->get_robot_config();
+    int dof = robot_config.joint_dof;
     Gain gain{dof};
-    Arx5Solver solver("../models/arx5.urdf", dof);
+    Arx5Solver solver("../models/arx5.urdf", dof, robot_config.joint_pos_min, robot_config.joint_pos_max);
     arx5_cartesian_controller->reset_to_home();
     arx5_cartesian_controller->set_log_level(spdlog::level::debug);
     gain.kd = (arx5_cartesian_controller->get_controller_config()).default_kd / 10;

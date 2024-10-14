@@ -84,7 +84,7 @@ class RobotConfigFactory
             "X5",                                                          // robot_model
             (VecDoF(6) << -3.14, -0.05, -0.1, -1.6, -1.57, -2).finished(), // joint_pos_min
             (VecDoF(6) << 2.618, 3.14, 3.24, 1.55, 1.57, 2).finished(),    // joint_pos_max
-            (VecDoF(6) << 4.0, 4.0, 4.5, 4.5, 5.0, 5.0).finished(),        // joint_vel_max
+            (VecDoF(6) << 5.0, 5.0, 5.5, 5.5, 5.0, 5.0).finished(),        // joint_vel_max
             (VecDoF(6) << 30.0, 40.0, 30.0, 15.0, 10.0, 10.0).finished(),  // joint_torque_max
             (Pose6d() << 0.6, 0.6, 0.6, 1.8, 1.8, 1.8).finished(),         // ee_vel_max
             0.1,                                                           // gripper_vel_max
@@ -105,7 +105,7 @@ class RobotConfigFactory
             "L5",                                                          // robot_model
             (VecDoF(6) << -3.14, -0.05, -0.1, -1.6, -1.57, -2).finished(), // joint_pos_min
             (VecDoF(6) << 2.618, 3.14, 3.24, 1.55, 1.57, 2).finished(),    // joint_pos_max
-            (VecDoF(6) << 4.0, 4.0, 4.5, 4.5, 5.0, 5.0).finished(),        // joint_vel_max
+            (VecDoF(6) << 5.0, 5.0, 5.5, 5.5, 5.0, 5.0).finished(),        // joint_vel_max
             (VecDoF(6) << 30.0, 40.0, 30.0, 15.0, 10.0, 10.0).finished(),  // joint_torque_max
             (Pose6d() << 0.6, 0.6, 0.6, 1.8, 1.8, 1.8).finished(),         // ee_vel_max
             0.1,                                                           // gripper_vel_max
@@ -126,7 +126,7 @@ class RobotConfigFactory
             "X7Left",                                                                  // robot_model
             (VecDoF(7) << -2.09439, -1.5, -1.5, -1.5, -1.2, -0.3, -0.7854).finished(), // joint_pos_min
             (VecDoF(7) << 2.09439, 0.3, 1.5, 0.3, 1.2, 0.7854, 0.7854).finished(),     // joint_pos_max
-            (VecDoF(7) << 3.0, 4.0, 4.0, 4.5, 4.5, 5.0, 5.0).finished(),               // joint_vel_max
+            (VecDoF(7) << 3.0, 5.0, 5.0, 5.5, 5.5, 5.0, 5.0).finished(),               // joint_vel_max
             (VecDoF(7) << 30.0, 30.0, 40.0, 30.0, 15.0, 10.0, 10.0).finished(),        // joint_torque_max
             (Pose6d() << 0.6, 0.6, 0.6, 1.8, 1.8, 1.8).finished(),                     // ee_vel_max
             0.1,                                                                       // gripper_vel_max
@@ -147,7 +147,7 @@ class RobotConfigFactory
             "X7Right",                                                                    // robot_model
             (VecDoF(7) << -2.09439, -0.3, -1.5, -0.3, -1.2, -0.7854, -0.7854).finished(), // joint_pos_min
             (VecDoF(7) << 2.09439, 1.5, 1.5, 1.5, 1.2, 0.3, 0.7854).finished(),           // joint_pos_max
-            (VecDoF(7) << 3.0, 4.0, 4.0, 4.5, 4.5, 5.0, 5.0).finished(),                  // joint_vel_max
+            (VecDoF(7) << 3.0, 5.0, 5.0, 5.5, 5.5, 5.0, 5.0).finished(),                  // joint_vel_max
             (VecDoF(7) << 30.0, 30.0, 40.0, 30.0, 15.0, 10.0, 10.0).finished(),           // joint_torque_max
             (Pose6d() << 0.6, 0.6, 0.6, 1.8, 1.8, 1.8).finished(),                        // ee_vel_max
             0.1,                                                                          // gripper_vel_max

@@ -223,6 +223,19 @@ double Interpolator1d::interpolate_vel(double time)
     }
 }
 
+std::string Interpolator1d::to_string()
+{
+    std::string str = "InterpolatorXd: \n";
+    str += "    _start_pos:" + std::to_string(_start_pos);
+    str += " _start_vel:" + std::to_string(_start_vel);
+    str += " _start_time:" + std::to_string(_start_time);
+    str += "\n   _end_pos:" + std::to_string(_end_pos);
+    str += " _end_vel:" + std::to_string(_end_vel);
+    str += " _end_time:" + std::to_string(_end_time);
+    str += "\n";
+    return str;
+}
+
 InterpolatorXd::InterpolatorXd(int dof, std::string method)
 {
     if (method != "linear" && method != "cubic")
@@ -399,6 +412,19 @@ Eigen::VectorXd InterpolatorXd::interpolate_vel(double time)
         }
         return vel;
     }
+}
+
+std::string InterpolatorXd::to_string()
+{
+    std::string str = "InterpolatorXd: \n";
+    str += "    _start_pos:" + vec2str(_start_pos);
+    str += " _start_vel:" + vec2str(_start_vel);
+    str += " _start_time:" + std::to_string(_start_time);
+    str += "\n   _end_pos:" + vec2str(_end_pos);
+    str += " _end_vel:" + vec2str(_end_vel);
+    str += " _end_time:" + std::to_string(_end_time);
+    str += "\n";
+    return str;
 }
 } // namespace arx
 

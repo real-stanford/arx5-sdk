@@ -90,11 +90,13 @@ PYBIND11_MODULE(arx5_interface, m)
         .def("reset_to_home", &Arx5CartesianController::reset_to_home)
         .def("set_to_damping", &Arx5CartesianController::set_to_damping);
     py::class_<Arx5Solver>(m, "Arx5Solver")
-        .def(py::init<const std::string &, int>())
-        .def(py::init<const std::string &, int, const std::string &, const std::string &, Eigen::Vector3d>())
+        .def(py::init<const std::string &, int, Eigen::VectorXd, Eigen::VectorXd>())
+        .def(py::init<const std::string &, int, Eigen::VectorXd, Eigen::VectorXd, const std::string &,
+                      const std::string &, Eigen::Vector3d>())
         .def("inverse_dynamics", &Arx5Solver::inverse_dynamics)
         .def("forward_kinematics", &Arx5Solver::forward_kinematics)
-        .def("inverse_kinematics", &Arx5Solver::inverse_kinematics);
+        .def("inverse_kinematics", &Arx5Solver::inverse_kinematics)
+        .def("multi_trial_ik", &Arx5Solver::multi_trial_ik);
     py::class_<RobotConfig>(m, "RobotConfig")
         .def_readwrite("robot_model", &RobotConfig::robot_model)
         .def_readwrite("joint_pos_min", &RobotConfig::joint_pos_min)

@@ -13,7 +13,8 @@ Arx5JointController::Arx5JointController(RobotConfig robot_config, ControllerCon
       _robot_config(robot_config), _controller_config(controller_config)
 {
     _logger->set_pattern("[%H:%M:%S %n %^%l%$] %v");
-    _solver = std::make_shared<Arx5Solver>(urdf_path, _robot_config.joint_dof, _robot_config.base_link_name,
+    _solver = std::make_shared<Arx5Solver>(urdf_path, _robot_config.joint_dof, _robot_config.joint_pos_min,
+                                           _robot_config.joint_pos_max, _robot_config.base_link_name,
                                            _robot_config.eef_link_name, _robot_config.gravity_vector);
     _init_robot();
     _interp_start_joint_cmd = _input_joint_cmd;
