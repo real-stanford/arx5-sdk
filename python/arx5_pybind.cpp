@@ -127,6 +127,7 @@ PYBIND11_MODULE(arx5_interface, m)
         .def_readwrite("gravity_compensation", &ControllerConfig::gravity_compensation)
         .def_readwrite("shutdown_to_passive", &ControllerConfig::shutdown_to_passive)
         .def_readwrite("interpolation_method", &ControllerConfig::interpolation_method)
+        .def_readwrite("default_preview_time", &ControllerConfig::default_preview_time)
         .def_readwrite("controller_dt", &ControllerConfig::controller_dt);
     py::class_<RobotConfigFactory>(m, "RobotConfigFactory")
         .def_static("get_instance", &RobotConfigFactory::get_instance, py::return_value_policy::reference)

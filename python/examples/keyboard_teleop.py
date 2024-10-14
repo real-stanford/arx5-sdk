@@ -26,7 +26,7 @@ def start_keyboard_teleop(controller: Arx5CartesianController):
 
     target_gripper_pos = 0.0
     cmd_dt = 0.01
-    look_ahead_time = 0.1
+    preview_time = 0.1
     window_size = 5
     keyboard_queue = Queue(window_size)
     robot_config = controller.get_robot_config()
@@ -146,7 +146,7 @@ def start_keyboard_teleop(controller: Arx5CartesianController):
         eef_cmd = EEFState()
         eef_cmd.pose_6d()[:] = target_pose_6d
         eef_cmd.gripper_pos = target_gripper_pos
-        eef_cmd.timestamp = current_timestamp + look_ahead_time
+        eef_cmd.timestamp = current_timestamp + preview_time
         controller.set_eef_cmd(eef_cmd)
 
 

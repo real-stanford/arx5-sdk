@@ -163,7 +163,6 @@ void Arx5ControllerBase::reset_to_home()
     }
 
     JointState target_state{_robot_config.joint_dof};
-    _logger->debug("init_state.pos: {}, target_state.pos: {}", vec2str(init_state.pos), vec2str(target_state.pos));
 
     // calculate the maximum joint position error
     double max_pos_error = (init_state.pos - VecDoF::Zero(_robot_config.joint_dof)).cwiseAbs().maxCoeff();

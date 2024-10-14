@@ -645,7 +645,6 @@ void Arx5JointController::reset_to_home()
     }
 
     JointState target_state{_robot_config.joint_dof};
-    _logger->debug("init_state.pos: {}, target_state.pos: {}", vec2str(init_state.pos), vec2str(target_state.pos));
     if (init_state.pos == VecDoF::Zero(_robot_config.joint_dof))
     {
         _logger->error("Motor positions are not initialized. Please check the connection.");

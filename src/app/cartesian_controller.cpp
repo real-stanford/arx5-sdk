@@ -33,16 +33,18 @@ void Arx5CartesianController::set_eef_cmd(EEFState new_cmd)
     bool success = std::get<0>(ik_results);
     VecDoF target_joint_pos = std::get<1>(ik_results);
 
+    if (new_cmd.timestamp == 0)
+    {
+        new_cmd.timestamp = get_timestamp() + _controller_config.default_preview_time;
+    }
+
     // The following line only works under c++17
     // auto [success, target_joint_pos] = _solver->inverse_kinematics(new_cmd.pose_6d, current_joint_state.pos);
-    _logger->debug("target_pose: {}, current_joint_pos: {}", vec2str(new_cmd.pose_6d),
-                   vec2str(current_joint_state.pos));
     if (success)
     {
         double current_time = get_timestamp();
         // TODO: include velocity
         std::lock_guard<std::mutex> lock(_interpolator_mutex);
-        _logger->debug("target_joint_pos: {}", vec2str(target_joint_pos));
         _joint_interpolator.update(current_time, target_joint_pos, Pose6d::Zero(), new_cmd.timestamp);
         _gripper_interpolator.update(current_time, new_cmd.gripper_pos, 0, new_cmd.timestamp);
     }

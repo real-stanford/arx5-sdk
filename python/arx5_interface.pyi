@@ -45,6 +45,7 @@ class ControllerConfig:
     background_send_recv: bool
     shutdown_to_passive: bool
     interpolation_method: str
+    default_preview_time: float
 
 class RobotConfigFactory:
     @classmethod
