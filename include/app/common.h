@@ -30,8 +30,8 @@ struct JointState
     VecDoF vel;
     VecDoF torque;
     double gripper_pos = 0.0f;    // m; 0 for close, GRIPPER_WIDTH for fully open
-    double gripper_vel = 0.0f;    // s^{-1}
-    double gripper_torque = 0.0f; // Nm
+    double gripper_vel = 0.0f;    // s^{-1}; currently not supported
+    double gripper_torque = 0.0f; // Nm; currently not supported
     JointState(int dof) : pos(VecDoF::Zero(dof)), vel(VecDoF::Zero(dof)), torque(VecDoF::Zero(dof))
     {
     }
@@ -39,13 +39,22 @@ struct JointState
         : pos(pos), vel(vel), torque(torque), gripper_pos(gripper_pos)
     {
     }
+
     JointState operator+(const JointState &other) const
     {
         return JointState(pos + other.pos, vel + other.vel, torque + other.torque, gripper_pos + other.gripper_pos);
     }
+    JointState operator-(const JointState &other) const
+    {
+        return JointState(pos - other.pos, vel - other.vel, torque - other.torque, gripper_pos - other.gripper_pos);
+    }
     JointState operator*(const double &scalar) const
     {
         return JointState(pos * scalar, vel * scalar, torque * scalar, gripper_pos * scalar);
+    }
+    JointState operator/(const double &scalar) const
+    {
+        return JointState(pos / scalar, vel / scalar, torque / scalar, gripper_pos / scalar);
     }
     // For pybind11 to update values
     VecDoF &get_pos_ref()
@@ -60,6 +69,7 @@ struct JointState
     {
         return torque;
     }
+
 };
 
 struct Gain

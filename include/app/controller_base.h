@@ -49,6 +49,8 @@ class Arx5ControllerBase // parent class for the other two controllers
     JointState _joint_state{_robot_config.joint_dof};
     Gain _gain{_robot_config.joint_dof};
 
+    bool _prev_gripper_updated = false; // To suppress the warning message
+
     ArxCan _can_handle;
     std::shared_ptr<spdlog::logger> _logger;
     std::thread _background_send_recv_thread;
@@ -62,8 +64,7 @@ class Arx5ControllerBase // parent class for the other two controllers
 
     int _start_time_us;
     std::shared_ptr<Arx5Solver> _solver;
-    InterpolatorXd _joint_interpolator{_robot_config.joint_dof, _controller_config.interpolation_method};
-    Interpolator1d _gripper_interpolator{"linear"};
+    JointStateInterpolator _interpolator{_robot_config.joint_dof, _controller_config.interpolation_method};
     void _init_robot();
     void _update_joint_state();
     void _update_output_cmd();

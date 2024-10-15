@@ -47,196 +47,7 @@ Eigen::VectorXd MovingAverageXd::filter(Eigen::VectorXd new_data)
 //   return str;
 // }
 
-Interpolator1d::Interpolator1d(std::string method)
-{
-    if (method != "linear" && method != "cubic")
-    {
-        throw std::invalid_argument("Invalid interpolation method: " + method +
-                                    ". Currently available: 'linear' or 'cubic'");
-    }
-    _method = method;
-    _initialized = false;
-}
-
-void Interpolator1d::init(double start_pos, double start_vel, double start_time, double end_pos, double end_vel,
-                          double end_time)
-{
-    if (end_time < start_time)
-    {
-        throw std::invalid_argument("End time must be no less than start time");
-    }
-    else if (end_time == start_time && start_pos != end_pos)
-    {
-        throw std::invalid_argument("Start and end time are the same, but start and end positions are different");
-    }
-
-    _start_pos = start_pos;
-    _start_vel = start_vel;
-    _start_time = start_time;
-    _end_pos = end_pos;
-    _end_vel = end_vel;
-    _end_time = end_time;
-    _fixed = false;
-    _initialized = true;
-}
-
-void Interpolator1d::init_fixed(double start_pos)
-{
-    _start_pos = start_pos;
-    _start_vel = 0;
-    _start_time = 0;
-    _end_pos = start_pos;
-    _end_vel = 0;
-    _end_time = 0;
-
-    _fixed = true;
-    _initialized = true;
-}
-
-void Interpolator1d::update(double current_time, double end_pos, double end_vel, double end_time)
-{
-    if (!_initialized)
-    {
-        throw std::runtime_error("Interpolator not initialized");
-    }
-
-    double current_pos = 0;
-    double current_vel = 0;
-
-    if (end_time < current_time)
-    {
-        throw std::invalid_argument("End time must be no less than current time");
-    }
-    else if (end_time == current_time && end_pos != _end_pos)
-    {
-        throw std::invalid_argument("Current and end time are the same, but current and end positions are different");
-    }
-
-    if (current_time > _end_time)
-    {
-        current_vel = 0;
-        current_pos = _end_pos;
-    }
-    else if (current_time < _start_time)
-    {
-        throw std::runtime_error("Current time must be no less than start time");
-    }
-    else
-    {
-        current_pos = interpolate_pos(current_time);
-        current_vel = interpolate_vel(current_time);
-    }
-
-    _start_pos = current_pos;
-    _start_vel = current_vel;
-    _start_time = current_time;
-    _end_pos = end_pos;
-    _end_vel = end_vel;
-    _end_time = end_time;
-    _fixed = false;
-}
-
-double Interpolator1d::interpolate_pos(double time)
-{
-    if (!_initialized)
-    {
-        throw std::runtime_error("Interpolator not initialized");
-    }
-
-    if (_fixed)
-    {
-        return _start_pos;
-    }
-
-    if (time <= _start_time)
-    {
-        return _start_pos;
-    }
-    else if (time >= _end_time)
-    {
-        return _end_pos;
-    }
-    if (_method == "linear")
-    {
-        return _start_pos + (_end_pos - _start_pos) * (time - _start_time) / (_end_time - _start_time);
-    }
-    else if (_method == "cubic")
-    {
-        double pos = 0;
-
-        double t = (time - _start_time) / (_end_time - _start_time);
-        double t2 = t * t;
-        double t3 = t2 * t;
-        double a = 2 * t3 - 3 * t2 + 1;
-        double b = t3 - 2 * t2 + t;
-        double c = -2 * t3 + 3 * t2;
-        double d = t3 - t2;
-
-        pos = a * _start_pos + b * _start_vel + c * _end_pos + d * _end_vel;
-
-        return pos;
-    }
-}
-
-double Interpolator1d::interpolate_vel(double time)
-{
-    if (!_initialized)
-    {
-        throw std::runtime_error("Interpolator not initialized");
-    }
-
-    if (_fixed)
-    {
-        return 0.0;
-    }
-
-    if (time < _start_time || time > _end_time)
-    {
-        throw std::invalid_argument("Time must be within the range of start and end time");
-    }
-    else if (time == _start_time)
-    {
-        return _start_vel;
-    }
-    else if (time == _end_time)
-    {
-        return _end_vel;
-    }
-
-    if (_method == "linear")
-    {
-        return (_end_pos - _start_pos) / (_end_time - _start_time);
-    }
-    else if (_method == "cubic")
-    {
-        double vel = 0;
-
-        double t = (time - _start_time) / (_end_time - _start_time);
-        double t2 = t * t;
-        double a = 6 * t2 - 6 * t;
-        double b = 3 * t2 - 4 * t + 1;
-        double c = -6 * t2 + 6 * t;
-        double d = 3 * t2 - 2 * t;
-        vel = a * _start_pos + b * _start_vel + c * _end_pos + d * _end_vel;
-
-        return vel;
-    }
-}
-
-std::string Interpolator1d::to_string()
-{
-    std::string str = "InterpolatorXd: \n";
-    str += "    _start_pos:" + std::to_string(_start_pos);
-    str += " _start_vel:" + std::to_string(_start_vel);
-    str += " _start_time:" + std::to_string(_start_time);
-    str += "\n   _end_pos:" + std::to_string(_end_pos);
-    str += " _end_vel:" + std::to_string(_end_vel);
-    str += " _end_time:" + std::to_string(_end_time);
-    str += "\n";
-    return str;
-}
-
-InterpolatorXd::InterpolatorXd(int dof, std::string method)
+JointStateInterpolator::JointStateInterpolator(int dof, std::string method) : _start_state{dof}, _end_state{dof}
 {
     if (method != "linear" && method != "cubic")
     {
@@ -248,181 +59,144 @@ InterpolatorXd::InterpolatorXd(int dof, std::string method)
     _initialized = false;
 }
 
-void InterpolatorXd::init(Eigen::VectorXd start_pos, Eigen::VectorXd start_vel, double start_time,
-                          Eigen::VectorXd end_pos, Eigen::VectorXd end_vel, double end_time)
+void JointStateInterpolator::init(JointState start_state, JointState end_state)
 {
-    if (end_time < start_time)
+    if (end_state.timestamp < start_state.timestamp)
     {
         throw std::invalid_argument("End time must be no less than start time");
     }
-    else if (end_time == start_time)
+    else if (end_state.timestamp == start_state.timestamp)
     {
         throw std::invalid_argument("Start and end time are the same, plsease use init_fixed() instead");
     }
-
-    _start_pos = start_pos;
-    _start_vel = start_vel;
-    _start_time = start_time;
-    _end_pos = end_pos;
-    _end_vel = end_vel;
-    _end_time = end_time;
+    _start_state = start_state;
+    _end_state = end_state;
     _fixed = false;
     _initialized = true;
 }
 
-void InterpolatorXd::init_fixed(Eigen::VectorXd start_pos)
+void JointStateInterpolator::init_fixed(JointState start_state)
 {
-    _start_pos = start_pos;
-    _start_vel = Eigen::VectorXd::Zero(_dof);
-    _start_time = 0;
-    _end_pos = start_pos;
-    _end_vel = Eigen::VectorXd::Zero(_dof);
-    _end_time = 0;
+    _start_state = start_state;
+    _end_state = start_state;
 
     _fixed = true;
     _initialized = true;
 }
 
-void InterpolatorXd::update(double current_time, Eigen::VectorXd end_pos, Eigen::VectorXd end_vel, double end_time)
+void JointStateInterpolator::update(double current_time, JointState end_state)
 {
     if (!_initialized)
     {
         throw std::runtime_error("Interpolator not initialized");
     }
 
-    Eigen::VectorXd current_pos(_dof);
-    Eigen::VectorXd current_vel(_dof);
-
-    if (end_time < current_time)
+    if (end_state.timestamp < current_time)
     {
         throw std::invalid_argument("End time must be no less than current time");
     }
-    else if (end_time == current_time && end_pos != _end_pos)
+    else if (end_state.timestamp == current_time && end_state.pos != _end_state.pos)
     {
         throw std::invalid_argument("Current and end time are the same, but current and end positions are different");
     }
 
-    if (current_time > _end_time)
-    {
-        current_vel = Eigen::VectorXd::Zero(_dof);
-        current_pos = _end_pos;
-    }
-    else if (current_time < _start_time)
+    JointState current_state{_dof};
+
+    if (current_time < _start_state.timestamp)
     {
         throw std::runtime_error("Current time must be no less than start time");
     }
     else
     {
-        current_pos = interpolate_pos(current_time);
-        current_vel = interpolate_vel(current_time);
+        current_state = interpolate(current_time);
     }
 
-    _start_pos = current_pos;
-    _start_vel = current_vel;
-    _start_time = current_time;
-    _end_pos = end_pos;
-    _end_vel = end_vel;
-    _end_time = end_time;
+    _start_state.pos = current_state.pos;
+    _start_state.vel = current_state.vel;
+    _start_state.torque = current_state.torque;
+    _start_state.timestamp = current_time;
+    _end_state.pos = end_state.pos;
+    _end_state.vel = end_state.vel;
+    _end_state.torque = end_state.torque;
+    _end_state.timestamp = end_state.timestamp;
     _fixed = false;
 }
 
-Eigen::VectorXd InterpolatorXd::interpolate_pos(double time)
+JointState JointStateInterpolator::interpolate(double time)
 {
+
     if (!_initialized)
     {
         throw std::runtime_error("Interpolator not initialized");
     }
-
-    if (_fixed)
+    if (time <= 0)
     {
-        return _start_pos;
-    }
-
-    if (time <= _start_time)
-    {
-        return _start_pos;
-    }
-    else if (time >= _end_time)
-    {
-        return _end_pos;
-    }
-    if (_method == "linear")
-    {
-        return _start_pos + (_end_pos - _start_pos) * (time - _start_time) / (_end_time - _start_time);
-    }
-    else if (_method == "cubic")
-    {
-        Eigen::VectorXd pos = Eigen::VectorXd::Zero(_dof);
-        for (int i = 0; i < _dof; i++)
-        {
-            double t = (time - _start_time) / (_end_time - _start_time);
-            double t2 = t * t;
-            double t3 = t2 * t;
-            double a = 2 * t3 - 3 * t2 + 1;
-            double b = t3 - 2 * t2 + t;
-            double c = -2 * t3 + 3 * t2;
-            double d = t3 - t2;
-            pos(i) = a * _start_pos(i) + b * _start_vel(i) + c * _end_pos(i) + d * _end_vel(i);
-        }
-        return pos;
-    }
-}
-
-Eigen::VectorXd InterpolatorXd::interpolate_vel(double time)
-{
-    if (!_initialized)
-    {
-        throw std::runtime_error("Interpolator not initialized");
+        throw std::invalid_argument("Interpolate time must be greater than 0");
     }
 
     if (_fixed)
     {
-        return Eigen::VectorXd::Zero(_dof);
+        return _start_state;
     }
 
-    if (time < _start_time || time > _end_time)
+    if (time <= _start_state.timestamp)
     {
-        throw std::invalid_argument("Time must be within the range of start and end time");
+        return _start_state;
     }
-    else if (time == _start_time)
+    else if (time >= _end_state.timestamp)
     {
-        return _start_vel;
+        return _end_state;
     }
-    else if (time == _end_time)
-    {
-        return _end_vel;
-    }
-
     if (_method == "linear")
     {
-        return (_end_pos - _start_pos) / (_end_time - _start_time);
+        JointState interp_result = _start_state + (_end_state - _start_state) * (time - _start_state.timestamp) /
+                                                      (_end_state.timestamp - _start_state.timestamp);
+        interp_result.timestamp = time;
+        return interp_result;
     }
     else if (_method == "cubic")
     {
-        Eigen::VectorXd vel = Eigen::VectorXd::Zero(_dof);
-        for (int i = 0; i < _dof; i++)
-        {
-            double t = (time - _start_time) / (_end_time - _start_time);
-            double t2 = t * t;
-            double a = 6 * t2 - 6 * t;
-            double b = 3 * t2 - 4 * t + 1;
-            double c = -6 * t2 + 6 * t;
-            double d = 3 * t2 - 2 * t;
-            vel(i) = a * _start_pos(i) + b * _start_vel(i) + c * _end_pos(i) + d * _end_vel(i);
-        }
-        return vel;
+        // Torque and gripper pos will still be linearly interpolated
+        JointState interp_result = _start_state + (_end_state - _start_state) * (time - _start_state.timestamp) /
+                                                      (_end_state.timestamp - _start_state.timestamp);
+        interp_result.timestamp = time;
+
+        // Cubic interpolation for pos and vel
+        double t = (time - _start_state.timestamp) / (_end_state.timestamp - _start_state.timestamp);
+        double t2 = t * t;
+        double t3 = t2 * t;
+        double pos_a = 2 * t3 - 3 * t2 + 1;
+        double pos_b = t3 - 2 * t2 + t;
+        double pos_c = -2 * t3 + 3 * t2;
+        double pos_d = t3 - t2;
+        interp_result.pos =
+            pos_a * _start_state.pos + pos_b * _start_state.vel + pos_c * _end_state.pos + pos_d * _end_state.vel;
+
+        double vel_a = 6 * t2 - 6 * t;
+        double vel_b = 3 * t2 - 4 * t + 1;
+        double vel_c = -6 * t2 + 6 * t;
+        double vel_d = 3 * t2 - 2 * t;
+        interp_result.vel =
+            vel_a * _start_state.pos + vel_b * _start_state.vel + vel_c * _end_state.pos + vel_d * _end_state.vel;
+        return interp_result;
     }
 }
 
-std::string InterpolatorXd::to_string()
+std::string JointStateInterpolator::to_string()
 {
-    std::string str = "InterpolatorXd: \n";
-    str += "    _start_pos:" + vec2str(_start_pos);
-    str += " _start_vel:" + vec2str(_start_vel);
-    str += " _start_time:" + std::to_string(_start_time);
-    str += "\n   _end_pos:" + vec2str(_end_pos);
-    str += " _end_vel:" + vec2str(_end_vel);
-    str += " _end_time:" + std::to_string(_end_time);
+    std::string str = "JointStateInterpolator: \n";
+    str += "  start: " + state2str(_start_state);
+    str += "  end: " + state2str(_end_state);
+    return str;
+}
+
+std::string state2str(const JointState &state, int precision)
+{
+    std::string str = "";
+    str += "pos:" + vec2str(state.pos, precision);
+    str += " vel:" + vec2str(state.vel, precision);
+    str += " torque:" + vec2str(state.torque, precision);
+    str += " gripper_pos:" + std::to_string(state.gripper_pos);
     str += "\n";
     return str;
 }

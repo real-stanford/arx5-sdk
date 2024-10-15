@@ -190,8 +190,8 @@ class ControllerConfig
     //       pressing `ctrl-\` will directly kill the program so this process will be skipped
     // false: will keep the arm in the air when shutting down the controller (both `ctrl-\` and `ctrl-C`).
     //       X5 cannot be kept in the air.
-    std::string interpolation_method;
-    double default_preview_time; // The default value for preview time if the command has 0 timestamp
+    std::string interpolation_method; // "linear" or "cubic" (cubic is not well supported yet)
+    double default_preview_time;      // The default value for preview time if the command has 0 timestamp
 
     ControllerConfig(std::string controller_type, VecDoF default_kp, VecDoF default_kd, double default_gripper_kp,
                      double default_gripper_kd, int over_current_cnt_max, double controller_dt,

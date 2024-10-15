@@ -102,9 +102,9 @@ def start_teleop_recording(controller: Arx5CartesianController):
                 eef_cmd = EEFState()
                 eef_cmd.pose_6d()[:] = target_pose_6d
                 eef_cmd.gripper_pos = target_gripper_pos
-                # eef_cmd.timestamp = current_timestamp + preview_time
                 # If you are using controller_config.default_preview_time,
                 # directly use eef_cmd.timestamp=0 will have the same effect
+                eef_cmd.timestamp = current_timestamp + preview_time
                 controller.set_eef_cmd(eef_cmd)
 
 
@@ -118,7 +118,7 @@ def main(model: str, interface: str, urdf_path: str):
     controller_config = ControllerConfigFactory.get_instance().get_config(
         "cartesian_controller", robot_config.joint_dof
     )
-    # controller_config.interpolation_method = "cubic"
+    controller_config.interpolation_method = "cubic"
     controller = Arx5CartesianController(
         robot_config, controller_config, interface, urdf_path
     )

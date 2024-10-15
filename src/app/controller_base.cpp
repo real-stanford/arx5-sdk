@@ -176,10 +176,10 @@ void Arx5ControllerBase::reset_to_home()
 
     bool prev_running = _background_send_recv_running;
     _background_send_recv_running = true;
+    target_state.timestamp = get_timestamp() + wait_time;
     {
         std::lock_guard<std::mutex> lock(_interpolator_mutex);
-        _joint_interpolator.update(get_timestamp(), target_state.pos, Pose6d::Zero(), get_timestamp() + wait_time);
-        _gripper_interpolator.update(get_timestamp(), target_state.gripper_pos, 0, get_timestamp() + wait_time);
+        _interpolator.update(get_timestamp(), target_state);
     }
     Gain new_gain{_robot_config.joint_dof};
     for (int i = 0; i <= step_num; i++)
@@ -204,8 +204,9 @@ void Arx5ControllerBase::set_to_damping()
     JointState joint_state = get_joint_state();
     {
         std::lock_guard<std::mutex> lock(_interpolator_mutex);
-        _joint_interpolator.init_fixed(joint_state.pos);
-        _gripper_interpolator.init_fixed(joint_state.gripper_pos);
+        joint_state.vel = VecDoF::Zero(_robot_config.joint_dof);
+        joint_state.torque = VecDoF::Zero(_robot_config.joint_dof);
+        _interpolator.init_fixed(joint_state);
     }
 }
 
@@ -219,8 +220,11 @@ void Arx5ControllerBase::_init_robot()
     for (int j = 0; j < init_rounds; j++)
     {
         _recv();
+        _logger->info("Done receiving only");
         _check_joint_state_sanity();
+        _logger->info("Done checking sanity");
         _over_current_protection();
+        _logger->info("Done over current protection");
     }
     _logger->info("Done receiving only");
 
@@ -250,12 +254,11 @@ void Arx5ControllerBase::_init_robot()
     _input_joint_cmd.timestamp = 0;
     _output_joint_cmd = _input_joint_cmd;
     _intermediate_joint_cmd = _input_joint_cmd;
+
     {
         std::lock_guard<std::mutex> lock(_interpolator_mutex);
-        _joint_interpolator.init_fixed(_joint_state.pos);
-        _gripper_interpolator.init_fixed(_joint_state.gripper_pos);
+        _interpolator.init_fixed(init_joint_state);
     }
-    _logger->info("Initialized interpolator");
 
     for (int j = 0; j < init_rounds; j++)
     {
@@ -409,13 +412,10 @@ void Arx5ControllerBase::_update_output_cmd()
 
     // TODO: deal with non-zero velocity and torque for joint control
     double timestamp = get_timestamp();
-    _output_joint_cmd.pos = _joint_interpolator.interpolate_pos(timestamp);
-    _output_joint_cmd.vel = VecDoF::Zero(_robot_config.joint_dof);
-    _output_joint_cmd.torque = VecDoF::Zero(_robot_config.joint_dof);
-    _output_joint_cmd.gripper_pos = _gripper_interpolator.interpolate_pos(timestamp);
-    _output_joint_cmd.gripper_vel = 0;
-    _output_joint_cmd.gripper_torque = 0;
-    _output_joint_cmd.timestamp = timestamp;
+    {
+        std::lock_guard<std::mutex> lock(_interpolator_mutex);
+        _output_joint_cmd = _interpolator.interpolate(timestamp);
+    }
 
     if (_controller_config.gravity_compensation)
     {
@@ -502,9 +502,13 @@ void Arx5ControllerBase::_update_output_cmd()
             _output_joint_cmd.gripper_pos - prev_output_cmd.gripper_pos; // negative for closing, positive for opening
         if (delta_pos * sign > 0)
         {
-            _logger->debug("Gripper torque is too large, gripper pos cmd is not updated");
+            if (_prev_gripper_updated)
+                _logger->warn("Gripper torque is too large, gripper pos cmd is not updated");
             _output_joint_cmd.gripper_pos = prev_output_cmd.gripper_pos;
+            _prev_gripper_updated = false;
         }
+        else
+            _prev_gripper_updated = true;
     }
 
     // Torque clipping
@@ -599,7 +603,8 @@ void Arx5ControllerBase::_send_recv()
 
 void Arx5ControllerBase::_recv()
 {
-    int communicate_sleep_us = 150;
+    _logger->info("Enter recv only");
+    int communicate_sleep_us = 300;
     for (int i = 0; i < _robot_config.joint_dof; i++)
     {
         int start_send_motor_time_us = get_time_us();
@@ -612,7 +617,10 @@ void Arx5ControllerBase::_recv()
                  _robot_config.motor_type[i] == MotorType::DM_J4340 ||
                  _robot_config.motor_type[i] == MotorType::DM_J8009)
         {
+            // sleep_ms(1);
+            _logger->info("start enable motor {}", _robot_config.motor_id[i]);
             _can_handle.enable_DM_motor(_robot_config.motor_id[i]);
+            _logger->info("end enable motor {}", _robot_config.motor_id[i]);
         }
         else
         {
@@ -622,6 +630,7 @@ void Arx5ControllerBase::_recv()
         int finish_send_motor_time_us = get_time_us();
         sleep_us(communicate_sleep_us - (finish_send_motor_time_us - start_send_motor_time_us));
     }
+    _logger->info("Done enabling regular motors");
     if (_robot_config.gripper_motor_type == MotorType::DM_J4310)
     {
         int start_send_motor_time_us = get_time_us();
@@ -630,6 +639,7 @@ void Arx5ControllerBase::_recv()
         sleep_us(communicate_sleep_us - (finish_send_motor_time_us - start_send_motor_time_us));
     }
     sleep_ms(1); // Wait until all the messages are updated
+    _logger->info("done sending enable messages");
     _update_joint_state();
 }
 
