@@ -13,12 +13,10 @@ Arx5ControllerBase::Arx5ControllerBase(RobotConfig robot_config, ControllerConfi
       _logger(spdlog::stdout_color_mt(robot_config.robot_model + std::string("_") + interface_name)),
       _robot_config(robot_config), _controller_config(controller_config)
 {
-    _logger->info("Start initializing solver");
     _logger->set_pattern("[%H:%M:%S %n %^%l%$] %v");
     _solver = std::make_shared<Arx5Solver>(urdf_path, _robot_config.joint_dof, _robot_config.joint_pos_min,
                                            _robot_config.joint_pos_max, _robot_config.base_link_name,
                                            _robot_config.eef_link_name, _robot_config.gravity_vector);
-    _logger->info("Done initializing solver");
     if (_robot_config.robot_model == "X5" && !_controller_config.shutdown_to_passive)
     {
         _logger->warn("When shutting down X5 robot arms, the motors have to be set to passive. "
@@ -216,17 +214,12 @@ void Arx5ControllerBase::_init_robot()
 {
     // Background send receive is disabled during initialization
     int init_rounds = 10; // Make sure the states of each motor is fully initialized
-    _logger->info("Enter _init_robot");
     for (int j = 0; j < init_rounds; j++)
     {
         _recv();
-        _logger->info("Done receiving only");
         _check_joint_state_sanity();
-        _logger->info("Done checking sanity");
         _over_current_protection();
-        _logger->info("Done over current protection");
     }
-    _logger->info("Done receiving only");
 
     Gain gain{_robot_config.joint_dof};
     gain.kd = _controller_config.default_kd;
@@ -247,7 +240,6 @@ void Arx5ControllerBase::_init_robot()
         throw std::runtime_error(
             "None of the motors are initialized. Please check the connection or power of the arm.");
     }
-    _logger->info("Done setting gain");
     _input_joint_cmd = get_joint_state();
     _input_joint_cmd.torque = init_joint_state.torque;
     _input_joint_cmd.vel = VecDoF::Zero(_robot_config.joint_dof);
@@ -266,7 +258,6 @@ void Arx5ControllerBase::_init_robot()
         _check_joint_state_sanity();
         _over_current_protection();
     }
-    _logger->info("Robot initialized");
 }
 
 void Arx5ControllerBase::_check_joint_state_sanity()
@@ -603,7 +594,6 @@ void Arx5ControllerBase::_send_recv()
 
 void Arx5ControllerBase::_recv()
 {
-    _logger->info("Enter recv only");
     int communicate_sleep_us = 300;
     for (int i = 0; i < _robot_config.joint_dof; i++)
     {
@@ -617,10 +607,7 @@ void Arx5ControllerBase::_recv()
                  _robot_config.motor_type[i] == MotorType::DM_J4340 ||
                  _robot_config.motor_type[i] == MotorType::DM_J8009)
         {
-            // sleep_ms(1);
-            _logger->info("start enable motor {}", _robot_config.motor_id[i]);
             _can_handle.enable_DM_motor(_robot_config.motor_id[i]);
-            _logger->info("end enable motor {}", _robot_config.motor_id[i]);
         }
         else
         {
@@ -630,7 +617,6 @@ void Arx5ControllerBase::_recv()
         int finish_send_motor_time_us = get_time_us();
         sleep_us(communicate_sleep_us - (finish_send_motor_time_us - start_send_motor_time_us));
     }
-    _logger->info("Done enabling regular motors");
     if (_robot_config.gripper_motor_type == MotorType::DM_J4310)
     {
         int start_send_motor_time_us = get_time_us();
@@ -639,7 +625,6 @@ void Arx5ControllerBase::_recv()
         sleep_us(communicate_sleep_us - (finish_send_motor_time_us - start_send_motor_time_us));
     }
     sleep_ms(1); // Wait until all the messages are updated
-    _logger->info("done sending enable messages");
     _update_joint_state();
 }
 

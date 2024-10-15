@@ -110,15 +110,8 @@ void JointStateInterpolator::update(double current_time, JointState end_state)
     {
         current_state = interpolate(current_time);
     }
-
-    _start_state.pos = current_state.pos;
-    _start_state.vel = current_state.vel;
-    _start_state.torque = current_state.torque;
-    _start_state.timestamp = current_time;
-    _end_state.pos = end_state.pos;
-    _end_state.vel = end_state.vel;
-    _end_state.torque = end_state.torque;
-    _end_state.timestamp = end_state.timestamp;
+    _start_state = current_state;
+    _end_state = end_state;
     _fixed = false;
 }
 

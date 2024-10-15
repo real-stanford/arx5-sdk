@@ -28,6 +28,7 @@ def start_teleop_recording(controller: Arx5CartesianController):
     ori_speed = 1.5
     pos_speed = 0.8
     gripper_speed = 0.04
+    deadzone_threshold = 0.2
     target_pose_6d = controller.get_home_pose()
 
     target_gripper_pos = 0.0
@@ -40,10 +41,22 @@ def start_teleop_recording(controller: Arx5CartesianController):
     controller_config = controller.get_controller_config()
 
     with SharedMemoryManager() as shm_manager:
-        with Spacemouse(shm_manager=shm_manager, deadzone=0.2, max_value=500) as sm:
+        with Spacemouse(
+            shm_manager=shm_manager, deadzone=deadzone_threshold, max_value=500
+        ) as sm:
 
             def get_filtered_spacemouse_output(sm: Spacemouse):
                 state = sm.get_motion_state_transformed()
+                # Remove the deadzone and normalize the output
+                positive_idx = state >= deadzone_threshold
+                negative_idx = state <= -deadzone_threshold
+                state[positive_idx] = (state[positive_idx] - deadzone_threshold) / (
+                    1 - deadzone_threshold
+                )
+                state[negative_idx] = (state[negative_idx] + deadzone_threshold) / (
+                    1 - deadzone_threshold
+                )
+
                 if (
                     spacemouse_queue.maxsize > 0
                     and spacemouse_queue._qsize() == spacemouse_queue.maxsize
@@ -104,7 +117,7 @@ def start_teleop_recording(controller: Arx5CartesianController):
                 eef_cmd.gripper_pos = target_gripper_pos
                 # If you are using controller_config.default_preview_time,
                 # directly use eef_cmd.timestamp=0 will have the same effect
-                eef_cmd.timestamp = current_timestamp + preview_time
+                # eef_cmd.timestamp = current_timestamp + preview_time
                 controller.set_eef_cmd(eef_cmd)
 
 
@@ -118,7 +131,7 @@ def main(model: str, interface: str, urdf_path: str):
     controller_config = ControllerConfigFactory.get_instance().get_config(
         "cartesian_controller", robot_config.joint_dof
     )
-    controller_config.interpolation_method = "cubic"
+    # controller_config.interpolation_method = "cubic"
     controller = Arx5CartesianController(
         robot_config, controller_config, interface, urdf_path
     )

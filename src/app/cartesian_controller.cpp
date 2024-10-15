@@ -35,15 +35,14 @@ void Arx5CartesianController::set_eef_cmd(EEFState new_cmd)
     ik_results = _solver->multi_trial_ik(new_cmd.pose_6d, _joint_state.pos);
     bool success = std::get<0>(ik_results);
 
+    if (new_cmd.timestamp == 0)
+        new_cmd.timestamp = get_timestamp() + _controller_config.default_preview_time;
+
     JointState target_joint_state{_robot_config.joint_dof};
     target_joint_state.pos = std::get<1>(ik_results);
     target_joint_state.gripper_pos = new_cmd.gripper_pos;
     target_joint_state.timestamp = new_cmd.timestamp;
 
-    if (new_cmd.timestamp == 0)
-    {
-        new_cmd.timestamp = get_timestamp() + _controller_config.default_preview_time;
-    }
     if (success)
     {
         double current_time = get_timestamp();
