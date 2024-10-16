@@ -96,6 +96,7 @@ PYBIND11_MODULE(arx5_interface, m)
         .def("inverse_dynamics", &Arx5Solver::inverse_dynamics)
         .def("forward_kinematics", &Arx5Solver::forward_kinematics)
         .def("inverse_kinematics", &Arx5Solver::inverse_kinematics)
+        .def("get_ik_status_name", &Arx5Solver::get_ik_status_name)
         .def("multi_trial_ik", &Arx5Solver::multi_trial_ik);
     py::class_<RobotConfig>(m, "RobotConfig")
         .def_readwrite("robot_model", &RobotConfig::robot_model)

@@ -176,6 +176,7 @@ void Arx5ControllerBase::reset_to_home()
     bool prev_running = _background_send_recv_running;
     _background_send_recv_running = true;
     target_state.timestamp = get_timestamp() + wait_time;
+    target_state.pos[2] = 0.03; // avoiding clash
     {
         std::lock_guard<std::mutex> lock(_cmd_mutex);
         _interpolator.update(get_timestamp(), target_state);
@@ -189,7 +190,12 @@ void Arx5ControllerBase::reset_to_home()
         sleep_us(int(_controller_config.controller_dt * 1e6));
     }
 
-    sleep_ms(500);
+    target_state.pos[2] = 0.0;
+    target_state.timestamp = get_timestamp() + 0.5;
+    {
+        std::lock_guard<std::mutex> lock(_cmd_mutex);
+        _interpolator.update(get_timestamp(), target_state);
+    }
     _logger->info("Finish reset to home");
     _background_send_recv_running = prev_running;
 }

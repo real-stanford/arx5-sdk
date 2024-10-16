@@ -33,9 +33,9 @@ void Arx5CartesianController::set_eef_cmd(EEFState new_cmd)
     // The following line only works under c++17
     // auto [success, target_joint_pos] = _solver->inverse_kinematics(new_cmd.pose_6d, current_joint_state.pos);
 
-    std::tuple<bool, VecDoF> ik_results;
+    std::tuple<int, VecDoF> ik_results;
     ik_results = _solver->multi_trial_ik(new_cmd.pose_6d, _joint_state.pos);
-    bool success = std::get<0>(ik_results);
+    int ik_status = std::get<0>(ik_results);
 
     if (new_cmd.timestamp == 0)
         new_cmd.timestamp = get_timestamp() + _controller_config.default_preview_time;
@@ -45,15 +45,13 @@ void Arx5CartesianController::set_eef_cmd(EEFState new_cmd)
     target_joint_state.gripper_pos = new_cmd.gripper_pos;
     target_joint_state.timestamp = new_cmd.timestamp;
 
-    if (success)
+    double current_time = get_timestamp();
+    // TODO: include velocity
+    std::lock_guard<std::mutex> lock(_cmd_mutex);
+    _interpolator.update(current_time, target_joint_state);
+
+    if (ik_status != 0)
     {
-        double current_time = get_timestamp();
-        // TODO: include velocity
-        std::lock_guard<std::mutex> lock(_cmd_mutex);
-        _interpolator.update(current_time, target_joint_state);
-    }
-    else
-    {
-        _logger->warn("Inverse kinematics failed");
+        _logger->warn("Inverse kinematics failed: {} ({})", _solver->get_ik_status_name(ik_status), ik_status);
     }
 }
