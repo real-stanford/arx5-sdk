@@ -34,6 +34,7 @@ class JointStateInterpolator
     void update(double current_time, JointState end_state);
     JointState interpolate(double time);
     std::string to_string();
+    bool is_initialized();
 
   private:
     int _dof;

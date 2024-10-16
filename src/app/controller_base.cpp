@@ -13,6 +13,7 @@ Arx5ControllerBase::Arx5ControllerBase(RobotConfig robot_config, ControllerConfi
       _logger(spdlog::stdout_color_mt(robot_config.robot_model + std::string("_") + interface_name)),
       _robot_config(robot_config), _controller_config(controller_config)
 {
+    _start_time_us = get_time_us();
     _logger->set_pattern("[%H:%M:%S %n %^%l%$] %v");
     _solver = std::make_shared<Arx5Solver>(urdf_path, _robot_config.joint_dof, _robot_config.joint_pos_min,
                                            _robot_config.joint_pos_max, _robot_config.base_link_name,
@@ -261,13 +262,16 @@ void Arx5ControllerBase::_check_joint_state_sanity()
             _enter_emergency_state();
         }
 
-        JointState interpolator_cmd = _interpolator.interpolate(get_timestamp());
-        if (std::abs(interpolator_cmd.pos[i]) > _robot_config.joint_pos_max[i] + 3.14 ||
-            std::abs(interpolator_cmd.pos[i]) < _robot_config.joint_pos_min[i] - 3.14)
+        if (_interpolator.is_initialized())
         {
-            _logger->error("Joint {} interpolated command data error: {:.3f}. Please restart the program.", i,
-                           interpolator_cmd.pos[i]);
-            _enter_emergency_state();
+            JointState interpolator_cmd = _interpolator.interpolate(get_timestamp());
+            if (std::abs(interpolator_cmd.pos[i]) > _robot_config.joint_pos_max[i] + 3.14 ||
+                std::abs(interpolator_cmd.pos[i]) < _robot_config.joint_pos_min[i] - 3.14)
+            {
+                _logger->error("Joint {} interpolated command data error: {:.3f}. Please restart the program.", i,
+                               interpolator_cmd.pos[i]);
+                _enter_emergency_state();
+            }
         }
         if (std::abs(_joint_state.torque[i]) > 100 * _robot_config.joint_torque_max[i])
         {

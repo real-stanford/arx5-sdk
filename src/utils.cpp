@@ -193,6 +193,11 @@ std::string state2str(const JointState &state, int precision)
     str += "\n";
     return str;
 }
+
+bool JointStateInterpolator::is_initialized()
+{
+    return _initialized;
+}
 } // namespace arx
 
 std::string vec2str(const Eigen::VectorXd &vec, int precision)
