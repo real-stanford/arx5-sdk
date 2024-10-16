@@ -47,7 +47,7 @@ void Arx5CartesianController::set_eef_cmd(EEFState new_cmd)
     {
         double current_time = get_timestamp();
         // TODO: include velocity
-        std::lock_guard<std::mutex> lock(_interpolator_mutex);
+        std::lock_guard<std::mutex> lock(_cmd_mutex);
         _interpolator.update(current_time, target_joint_state);
     }
     else

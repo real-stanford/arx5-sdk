@@ -22,7 +22,7 @@ class Arx5ControllerBase // parent class for the other two controllers
     Arx5ControllerBase(RobotConfig robot_config, ControllerConfig controller_config, std::string interface_name,
                        std::string urdf_path);
     ~Arx5ControllerBase();
-    std::tuple<JointState, JointState> get_joint_cmd();
+    JointState get_joint_cmd();
     JointState get_joint_state();
     EEFState get_eef_state();
     Pose6d get_home_pose();
@@ -43,12 +43,10 @@ class Arx5ControllerBase // parent class for the other two controllers
 
     int _over_current_cnt = 0;
     JointState _output_joint_cmd{_robot_config.joint_dof};
-    JointState _intermediate_joint_cmd{_robot_config.joint_dof}; // _output_joint_cmd without gravity compensation
-    JointState _input_joint_cmd{_robot_config.joint_dof};
 
     JointState _joint_state{_robot_config.joint_dof};
     Gain _gain{_robot_config.joint_dof};
-    // bool _prev_gripper_updated = false; // To suppress the warning message
+    // bool _prev_gripper_updated = false; // Declaring here leads to segfault
 
     ArxCan _can_handle;
     std::shared_ptr<spdlog::logger> _logger;
@@ -60,7 +58,6 @@ class Arx5ControllerBase // parent class for the other two controllers
 
     std::mutex _cmd_mutex;
     std::mutex _state_mutex;
-    std::mutex _interpolator_mutex;
 
     int _start_time_us;
     std::shared_ptr<Arx5Solver> _solver;

@@ -46,11 +46,9 @@ Arx5ControllerBase::~Arx5ControllerBase()
         set_gain(damping_gain);
         {
             std::lock_guard<std::mutex> guard(_cmd_mutex);
-            _input_joint_cmd.vel = VecDoF::Zero(_robot_config.joint_dof);
-            _input_joint_cmd.torque = VecDoF::Zero(_robot_config.joint_dof);
-            _input_joint_cmd.timestamp = 0;
-            _output_joint_cmd = _input_joint_cmd;
-            _intermediate_joint_cmd = _input_joint_cmd;
+            _output_joint_cmd.vel = VecDoF::Zero(_robot_config.joint_dof);
+            _output_joint_cmd.torque = VecDoF::Zero(_robot_config.joint_dof);
+            _interpolator.init_fixed(_output_joint_cmd);
         }
         _background_send_recv_running = true;
         _controller_config.gravity_compensation = false;
@@ -69,10 +67,10 @@ Arx5ControllerBase::~Arx5ControllerBase()
     _solver.reset();
 }
 
-std::tuple<JointState, JointState> Arx5ControllerBase::get_joint_cmd()
+JointState Arx5ControllerBase::get_joint_cmd()
 {
     std::lock_guard<std::mutex> guard(_cmd_mutex);
-    return std::make_tuple(_input_joint_cmd, _output_joint_cmd);
+    return _output_joint_cmd;
 }
 
 JointState Arx5ControllerBase::get_joint_state()
@@ -99,7 +97,9 @@ void Arx5ControllerBase::set_gain(Gain new_gain)
     // Make sure the robot doesn't jump when setting kp to non-zero
     if (_gain.kp.isZero() && !new_gain.kp.isZero())
     {
-        double max_pos_error = (_joint_state.pos - _output_joint_cmd.pos).cwiseAbs().maxCoeff();
+        JointState joint_state = get_joint_state();
+        JointState joint_cmd = get_joint_cmd();
+        double max_pos_error = (joint_state.pos - joint_cmd.pos).cwiseAbs().maxCoeff();
         double pos_error_threshold = 0.2;
         double kp_threshold = 1;
         if (max_pos_error > pos_error_threshold && new_gain.kp.maxCoeff() > kp_threshold)
@@ -107,7 +107,7 @@ void Arx5ControllerBase::set_gain(Gain new_gain)
             _logger->error("Cannot set kp too large when the joint pos cmd is far from current pos.");
             _logger->error(
                 "Target max kp: {}, kp threshold: {}. Current pos: {}, cmd pos: {}, position error threshold: {}",
-                new_gain.kp.maxCoeff(), kp_threshold, vec2str(_joint_state.pos), vec2str(_output_joint_cmd.pos),
+                new_gain.kp.maxCoeff(), kp_threshold, vec2str(joint_state.pos), vec2str(joint_cmd.pos),
                 pos_error_threshold);
             _background_send_recv_running = false;
             throw std::runtime_error("Cannot set kp to non-zero when the joint pos cmd is far from current pos.");
@@ -176,7 +176,7 @@ void Arx5ControllerBase::reset_to_home()
     _background_send_recv_running = true;
     target_state.timestamp = get_timestamp() + wait_time;
     {
-        std::lock_guard<std::mutex> lock(_interpolator_mutex);
+        std::lock_guard<std::mutex> lock(_cmd_mutex);
         _interpolator.update(get_timestamp(), target_state);
     }
     Gain new_gain{_robot_config.joint_dof};
@@ -201,7 +201,7 @@ void Arx5ControllerBase::set_to_damping()
     sleep_ms(10);
     JointState joint_state = get_joint_state();
     {
-        std::lock_guard<std::mutex> lock(_interpolator_mutex);
+        std::lock_guard<std::mutex> lock(_cmd_mutex);
         joint_state.vel = VecDoF::Zero(_robot_config.joint_dof);
         joint_state.torque = VecDoF::Zero(_robot_config.joint_dof);
         _interpolator.init_fixed(joint_state);
@@ -227,10 +227,6 @@ void Arx5ControllerBase::_init_robot()
     JointState init_joint_state = get_joint_state();
     init_joint_state.vel = VecDoF::Zero(_robot_config.joint_dof);
     init_joint_state.torque = VecDoF::Zero(_robot_config.joint_dof);
-    {
-        std::lock_guard<std::mutex> guard(_cmd_mutex);
-        _input_joint_cmd = init_joint_state;
-    }
     set_gain(gain); // set to damping by default
 
     // Check whether any motor has non-zero position
@@ -240,15 +236,9 @@ void Arx5ControllerBase::_init_robot()
         throw std::runtime_error(
             "None of the motors are initialized. Please check the connection or power of the arm.");
     }
-    _input_joint_cmd = get_joint_state();
-    _input_joint_cmd.torque = init_joint_state.torque;
-    _input_joint_cmd.vel = VecDoF::Zero(_robot_config.joint_dof);
-    _input_joint_cmd.timestamp = 0;
-    _output_joint_cmd = _input_joint_cmd;
-    _intermediate_joint_cmd = _input_joint_cmd;
-
     {
-        std::lock_guard<std::mutex> lock(_interpolator_mutex);
+        std::lock_guard<std::mutex> lock(_cmd_mutex);
+        _output_joint_cmd = init_joint_state;
         _interpolator.init_fixed(init_joint_state);
     }
 
@@ -270,11 +260,13 @@ void Arx5ControllerBase::_check_joint_state_sanity()
             _logger->error("Joint {} pos data error: {:.3f}. Please restart the program.", i, _joint_state.pos[i]);
             _enter_emergency_state();
         }
-        if (std::abs(_input_joint_cmd.pos[i]) > _robot_config.joint_pos_max[i] + 3.14 ||
-            std::abs(_input_joint_cmd.pos[i]) < _robot_config.joint_pos_min[i] - 3.14)
+
+        JointState interpolator_cmd = _interpolator.interpolate(get_timestamp());
+        if (std::abs(interpolator_cmd.pos[i]) > _robot_config.joint_pos_max[i] + 3.14 ||
+            std::abs(interpolator_cmd.pos[i]) < _robot_config.joint_pos_min[i] - 3.14)
         {
-            _logger->error("Joint {} command data error: {:.3f}. Please restart the program.", i,
-                           _input_joint_cmd.pos[i]);
+            _logger->error("Joint {} interpolated command data error: {:.3f}. Please restart the program.", i,
+                           interpolator_cmd.pos[i]);
             _enter_emergency_state();
         }
         if (std::abs(_joint_state.torque[i]) > 100 * _robot_config.joint_torque_max[i])
@@ -336,16 +328,15 @@ void Arx5ControllerBase::_enter_emergency_state()
     damping_gain.kd[1] *= 3;
     damping_gain.kd[2] *= 3;
     damping_gain.kd[3] *= 1.5;
-    set_gain(damping_gain);
-    _input_joint_cmd.vel = VecDoF::Zero(_robot_config.joint_dof);
-    _input_joint_cmd.torque = VecDoF::Zero(_robot_config.joint_dof);
     _logger->error("Emergency state entered. Please restart the program.");
     while (true)
     {
-        std::lock_guard<std::mutex> guard_cmd(_cmd_mutex);
+        std::lock_guard<std::mutex> guard(_cmd_mutex);
         set_gain(damping_gain);
-        _input_joint_cmd.vel = VecDoF::Zero(_robot_config.joint_dof);
-        _input_joint_cmd.torque = VecDoF::Zero(_robot_config.joint_dof);
+        _output_joint_cmd.vel = VecDoF::Zero(_robot_config.joint_dof);
+        _output_joint_cmd.torque = VecDoF::Zero(_robot_config.joint_dof);
+
+        _interpolator.init_fixed(_output_joint_cmd);
         _send_recv();
         sleep_ms(5);
     }
@@ -403,10 +394,7 @@ void Arx5ControllerBase::_update_output_cmd()
 
     // TODO: deal with non-zero velocity and torque for joint control
     double timestamp = get_timestamp();
-    {
-        std::lock_guard<std::mutex> lock(_interpolator_mutex);
-        _output_joint_cmd = _interpolator.interpolate(timestamp);
-    }
+    _output_joint_cmd = _interpolator.interpolate(timestamp);
 
     if (_controller_config.gravity_compensation)
     {
