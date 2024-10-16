@@ -177,9 +177,14 @@ void Arx5ControllerBase::reset_to_home()
     _background_send_recv_running = true;
     target_state.timestamp = get_timestamp() + wait_time;
     target_state.pos[2] = 0.03; // avoiding clash
+
     {
         std::lock_guard<std::mutex> lock(_cmd_mutex);
-        _interpolator.update(get_timestamp(), target_state);
+        JointState start_state{_robot_config.joint_dof};
+        start_state.pos = init_state.pos;
+        start_state.gripper_pos = init_state.gripper_pos;
+        start_state.timestamp = get_timestamp();
+        _interpolator.init(start_state, target_state);
     }
     Gain new_gain{_robot_config.joint_dof};
     for (int i = 0; i <= step_num; i++)
@@ -598,8 +603,8 @@ void Arx5ControllerBase::_recv()
         int start_send_motor_time_us = get_time_us();
         if (_robot_config.motor_type[i] == MotorType::EC_A4310)
         {
-            _logger->error("EC_A4310 motor type is not supported yet.");
-            assert(false);
+            _logger->error("EC_A4310 motor type is not supported yet in _recv().");
+            // assert(false);
         }
         else if (_robot_config.motor_type[i] == MotorType::DM_J4310 ||
                  _robot_config.motor_type[i] == MotorType::DM_J4340 ||

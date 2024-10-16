@@ -50,11 +50,11 @@ print(f"{fk_pose=}")
 
 home_pose = solver.forward_kinematics(joint_pos)
 init_pose = home_pose + np.array([0.05, 0, 0, 0, 0, 0])
-succeed, init_joint_pos = solver.inverse_kinematics(init_pose, np.zeros(6))
+ik_status, init_joint_pos = solver.inverse_kinematics(init_pose, np.zeros(6))
 
 print(f"{init_joint_pos=}")
 
-succeed, ik_joint_pos = solver.inverse_kinematics(
+ik_status, ik_joint_pos = solver.inverse_kinematics(
     home_pose,
     np.array(
         [
@@ -68,7 +68,7 @@ succeed, ik_joint_pos = solver.inverse_kinematics(
     ),
 )
 
-succeed, multi_trial_ik_joint_pos = solver.multi_trial_ik(
+ik_status, multi_trial_ik_joint_pos = solver.multi_trial_ik(
     home_pose,
     np.array(
         [
@@ -84,7 +84,7 @@ succeed, multi_trial_ik_joint_pos = solver.multi_trial_ik(
 )
 
 
-# succeed, ik_joint_pos = solver.inverse_kinematics(home_pose, init_joint_pos)
+# ik_status, ik_joint_pos = solver.inverse_kinematics(home_pose, init_joint_pos)
 
 
 print(f"{ik_joint_pos=}, {multi_trial_ik_joint_pos=}")

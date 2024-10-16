@@ -41,7 +41,7 @@ int main()
         // eef_state.gripper_pos); printf("raw joint pos: %.2f, %.2f, %.2f, %.2f, %.2f, %.2f\n",
         //        joint_state.pos[0], joint_state.pos[1], joint_state.pos[2],
         //        joint_state.pos[3], joint_state.pos[4], joint_state.pos[5]);
-        std::tuple<bool, VecDoF> result = solver.inverse_kinematics(eef_state.pose_6d, joint_state.pos);
+        std::tuple<int, VecDoF> result = solver.inverse_kinematics(eef_state.pose_6d, joint_state.pos);
         if (std::get<0>(result))
         {
             VecDoF ik_joint_pos = std::get<1>(result);
