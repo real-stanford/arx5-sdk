@@ -72,7 +72,7 @@ def main(model: str, interface: str, urdf_path: str):
             arx5_joint_controller.send_recv_once()
         else:
             time.sleep(controller_config.controller_dt)
-        JointState = arx5_joint_controller.get_state()
+        JointState = arx5_joint_controller.get_joint_state()
         arm_dof_pos = JointState.pos().copy()
         arm_dof_vel = JointState.vel().copy()
         # print(arm_dof_pos, arm_dof_vel)
@@ -89,7 +89,7 @@ def main(model: str, interface: str, urdf_path: str):
             arx5_joint_controller.send_recv_once()
         else:
             time.sleep(controller_config.controller_dt)
-        JointState = arx5_joint_controller.get_state()
+        JointState = arx5_joint_controller.get_joint_state()
         # print(f"gripper: {JointState.gripper_pos:.05f}")
 
     arx5_joint_controller.reset_to_home()

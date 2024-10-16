@@ -16,9 +16,7 @@ import numpy as np
 @click.argument("interface")  # can bus name (can0 etc.)
 @click.option("--urdf_path", "-u", default="../models/arx5.urdf", help="URDF file path")
 def main(model: str, interface: str, urdf_path: str):
-    controller = arx5.Arx5JointController(model, interface)
-    controller.enable_background_send_recv()
-    controller.enable_gravity_compensation(urdf_path)
+    controller = arx5.Arx5JointController(model, interface, urdf_path)
     controller.set_log_level(arx5.LogLevel.DEBUG)
     controller.reset_to_home()
     joint_waypoints = np.array(
@@ -26,7 +24,7 @@ def main(model: str, interface: str, urdf_path: str):
     )
     waypoint_interval_s = 5.0
     for waypoint in joint_waypoints:
-        joint_state = controller.get_state()
+        joint_state = controller.get_joint_state()
         joint_cmd = arx5.JointState(waypoint, np.zeros(6), np.zeros(6), 0.0)
         joint_cmd.timestamp = joint_state.timestamp + waypoint_interval_s
         controller.set_joint_cmd(joint_cmd)

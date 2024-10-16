@@ -20,8 +20,9 @@ int main()
     int loop_cnt = 0;
     while (true)
     {
-        JointState state = arx5_joint_controller->get_state();
-        Pose6d pose6 = arx5_joint_controller->get_tool_pose();
+        JointState state = arx5_joint_controller->get_joint_state();
+        EEFState eef_state = arx5_joint_controller->get_eef_state();
+        Pose6d pose6 = eef_state.pose_6d;
         std::cout << "Gripper: " << state.gripper_pos << ", joint pos: " << state.pos.transpose()
                   << ", Pose: " << pose6.transpose() << std::endl;
         usleep(10000); // 10ms

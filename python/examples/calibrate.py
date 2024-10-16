@@ -19,7 +19,7 @@ def calibrate_joint(model: str, interface: str, joint_id: int, urdf_path: str):
     joint_controller.set_gain(gain)
     joint_controller.calibrate_joint(joint_id)
     while True:
-        state = joint_controller.get_state()
+        state = joint_controller.get_joint_state()
         pos = state.pos()
         print(", ".join([f"{x:.3f}" for x in pos]))
         time.sleep(0.1)

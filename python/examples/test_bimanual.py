@@ -38,8 +38,8 @@ def main():
         cmd.gripper_pos = easeInOutQuad((i / (step_num - 1))) * 0.08
         arx5_0.set_joint_cmd(cmd)
         arx5_1.set_joint_cmd(cmd)
-        JointState = arx5_0.get_state()
-        JointState = arx5_1.get_state()
+        JointState = arx5_0.get_joint_state()
+        JointState = arx5_1.get_joint_state()
         arm_dof_pos = JointState.pos().copy()
         arm_dof_vel = JointState.vel().copy()
         # print(arm_dof_pos, arm_dof_vel)
@@ -55,8 +55,8 @@ def main():
         arx5_0.set_joint_cmd(cmd)
         arx5_1.set_joint_cmd(cmd)
         time.sleep(controller_config.controller_dt)
-        JointState = arx5_0.get_state()
-        JointState = arx5_1.get_state()
+        JointState = arx5_0.get_joint_state()
+        JointState = arx5_1.get_joint_state()
         # print(f"gripper: {JointState.gripper_pos:.05f}")
 
 

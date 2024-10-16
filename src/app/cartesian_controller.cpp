@@ -12,6 +12,9 @@ Arx5CartesianController::Arx5CartesianController(RobotConfig robot_config, Contr
                                                  std::string interface_name, std::string urdf_path)
     : Arx5ControllerBase(robot_config, controller_config, interface_name, urdf_path)
 {
+    if (!controller_config.background_send_recv)
+        throw std::runtime_error(
+            "controller_config.background_send_recv should be set to true when running cartesian controller.");
 }
 
 Arx5CartesianController::Arx5CartesianController(std::string model, std::string interface_name, std::string urdf_path)
@@ -25,7 +28,6 @@ Arx5CartesianController::Arx5CartesianController(std::string model, std::string 
 
 void Arx5CartesianController::set_eef_cmd(EEFState new_cmd)
 {
-    std::lock_guard<std::mutex> lock(_cmd_mutex);
     JointState current_joint_state = get_joint_state();
 
     // The following line only works under c++17

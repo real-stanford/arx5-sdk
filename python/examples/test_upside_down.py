@@ -15,6 +15,7 @@ This script is to test the solver when the gravity vector is not the default val
 To run this script successfully, please hang the robot arm upside down, so the gravity vector becomes [0, 0, 9.81].
 """
 
+
 @click.command()
 @click.argument("model")  # ARX arm model: X5 or L5
 @click.argument("interface")  # can bus name (can0 etc.)
