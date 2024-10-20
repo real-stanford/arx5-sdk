@@ -129,16 +129,22 @@ JointState JointStateInterpolator::interpolate(double time)
 
     if (_fixed)
     {
-        return _start_state;
+        JointState interp_state = _start_state;
+        interp_state.timestamp = time;
+        return interp_state;
     }
 
     if (time <= _start_state.timestamp)
     {
-        return _start_state;
+        JointState interp_state = _start_state;
+        interp_state.timestamp = time;
+        return interp_state;
     }
     else if (time >= _end_state.timestamp)
     {
-        return _end_state;
+        JointState interp_state = _end_state;
+        interp_state.timestamp = time;
+        return interp_state;
     }
     if (_method == "linear")
     {
@@ -190,6 +196,7 @@ std::string state2str(const JointState &state, int precision)
     str += " vel:" + vec2str(state.vel, precision);
     str += " torque:" + vec2str(state.torque, precision);
     str += " gripper_pos:" + std::to_string(state.gripper_pos);
+    str += " timestamp:" + std::to_string(state.timestamp);
     str += "\n";
     return str;
 }

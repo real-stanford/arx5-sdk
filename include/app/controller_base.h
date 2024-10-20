@@ -59,7 +59,7 @@ class Arx5ControllerBase // parent class for the other two controllers
     std::mutex _cmd_mutex;
     std::mutex _state_mutex;
 
-    int _start_time_us;
+    long int _start_time_us;
     std::shared_ptr<Arx5Solver> _solver;
     JointStateInterpolator _interpolator{_robot_config.joint_dof, _controller_config.interpolation_method};
     void _init_robot();
