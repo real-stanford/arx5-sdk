@@ -120,6 +120,13 @@ def start_teleop_recording(controller: Arx5CartesianController):
                 # eef_cmd.timestamp = current_timestamp + preview_time
                 controller.set_eef_cmd(eef_cmd)
 
+                output_eef_cmd = controller.get_eef_cmd()
+                eef_state = controller.get_eef_state()
+
+                # print(output_eef_cmd.pose_6d() - eef_state.pose_6d())
+                
+
+
 
 @click.command()
 @click.argument("model")  # ARX arm model: X5 or L5
@@ -132,6 +139,7 @@ def main(model: str, interface: str, urdf_path: str):
         "cartesian_controller", robot_config.joint_dof
     )
     # controller_config.interpolation_method = "cubic"
+    controller_config.default_kp = controller_config.default_kp
     controller = Arx5CartesianController(
         robot_config, controller_config, interface, urdf_path
     )

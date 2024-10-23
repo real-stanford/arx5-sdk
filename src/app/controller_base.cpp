@@ -275,6 +275,7 @@ void Arx5ControllerBase::_check_joint_state_sanity()
 
         if (_interpolator.is_initialized())
         {
+            std::lock_guard<std::mutex> guard(_cmd_mutex);
             JointState interpolator_cmd = _interpolator.interpolate(get_timestamp());
             if (std::abs(interpolator_cmd.pos[i]) > _robot_config.joint_pos_max[i] + 3.14 ||
                 std::abs(interpolator_cmd.pos[i]) < _robot_config.joint_pos_min[i] - 3.14)
@@ -404,12 +405,14 @@ void Arx5ControllerBase::_update_joint_state()
 
 void Arx5ControllerBase::_update_output_cmd()
 {
-    std::lock_guard<std::mutex> guard(_cmd_mutex);
     JointState prev_output_cmd = _output_joint_cmd;
 
     // TODO: deal with non-zero velocity and torque for joint control
     double timestamp = get_timestamp();
-    _output_joint_cmd = _interpolator.interpolate(timestamp);
+    {
+        std::lock_guard<std::mutex> guard(_cmd_mutex);
+        _output_joint_cmd = _interpolator.interpolate(timestamp);
+    }
 
     if (_controller_config.gravity_compensation)
     {

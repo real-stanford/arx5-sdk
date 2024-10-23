@@ -94,7 +94,11 @@ class Arx5Server:
                     continue
                 if msg["cmd"] == "GET_STATE":
                     # print(f"Received GET_STATE message")
+                    eef_pose_cmd = self.arx5_cartesian_controller.get_eef_cmd()
                     eef_state = self.arx5_cartesian_controller.get_eef_state()
+
+                    print(f"{eef_pose_cmd}")
+                    print(f"{eef_state.pose_6d()}")
                     low_state = self.arx5_cartesian_controller.get_joint_state()
                     reply_msg = {
                         "cmd": "GET_STATE",

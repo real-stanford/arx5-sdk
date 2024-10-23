@@ -54,3 +54,13 @@ void Arx5CartesianController::set_eef_cmd(EEFState new_cmd)
         _logger->warn("Inverse kinematics failed: {} ({})", _solver->get_ik_status_name(ik_status), ik_status);
     }
 }
+
+EEFState Arx5CartesianController::get_eef_cmd()
+{
+    JointState joint_cmd = get_joint_cmd();
+    EEFState eef_cmd;
+    eef_cmd.pose_6d = _solver->forward_kinematics(joint_cmd.pos);
+    eef_cmd.gripper_pos = joint_cmd.gripper_pos;
+    eef_cmd.timestamp = joint_cmd.timestamp;
+    return eef_cmd;
+}

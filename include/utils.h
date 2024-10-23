@@ -32,6 +32,7 @@ class JointStateInterpolator
     void init(JointState start_state, JointState end_state);
     void init_fixed(JointState start_state);
     void update(double current_time, JointState end_state);
+    // void update_traj(double current_time, std::vector<JointState> traj);
     JointState interpolate(double time);
     std::string to_string();
     bool is_initialized();
@@ -39,10 +40,8 @@ class JointStateInterpolator
   private:
     int _dof;
     bool _initialized = false;
-    bool _fixed = false;
     std::string _method;
-    JointState _start_state;
-    JointState _end_state;
+    std::vector<JointState> _traj;
 };
 
 // std::string vec2str(const Eigen::VectorXd& vec, int precision = 3);
