@@ -31,8 +31,8 @@ class JointStateInterpolator
     ~JointStateInterpolator() = default;
     void init(JointState start_state, JointState end_state);
     void init_fixed(JointState start_state);
-    void update(double current_time, JointState end_state);
-    // void update_traj(double current_time, std::vector<JointState> traj);
+    void insert_waypoint(double current_time, JointState end_state);
+    void update_traj(double current_time, std::vector<JointState> traj);
     JointState interpolate(double time);
     std::string to_string();
     bool is_initialized();

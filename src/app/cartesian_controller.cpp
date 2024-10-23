@@ -48,7 +48,8 @@ void Arx5CartesianController::set_eef_cmd(EEFState new_cmd)
     double current_time = get_timestamp();
     // TODO: include velocity
     std::lock_guard<std::mutex> lock(_cmd_mutex);
-    _interpolator.update(current_time, target_joint_state);
+    _interpolator.update_traj(get_timestamp(), std::vector<JointState>{target_joint_state});
+
     if (ik_status != 0)
     {
         _logger->warn("Inverse kinematics failed: {} ({})", _solver->get_ik_status_name(ik_status), ik_status);

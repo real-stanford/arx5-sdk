@@ -91,11 +91,16 @@ void JointStateInterpolator::init_fixed(JointState start_state)
     _initialized = true;
 }
 
-void JointStateInterpolator::update(double current_time, JointState end_state)
+void JointStateInterpolator::insert_waypoint(double current_time, JointState end_state)
 {
     if (!_initialized)
     {
         throw std::runtime_error("Interpolator not initialized");
+    }
+
+    if (end_state.pos.size() != _dof)
+    {
+        throw std::invalid_argument("Joint state dimension mismatch");
     }
 
     if (end_state.timestamp < current_time)
@@ -139,6 +144,68 @@ void JointStateInterpolator::update(double current_time, JointState end_state)
         {
             _traj.push_back(end_state);
         }
+    }
+}
+
+void JointStateInterpolator::update_traj(double current_time, std::vector<JointState> traj)
+{
+    if (!_initialized)
+    {
+        throw std::runtime_error("Interpolator not initialized");
+    }
+
+    // remove all the new traj points that are before current time
+    while (traj.size() > 0 && traj[0].timestamp < current_time)
+    {
+        traj.erase(traj.begin());
+    }
+
+    if (traj.size() == 0)
+    {
+        printf("JointStateInterpolator::update_traj: Empty trajectory\n");
+        return;
+    }
+
+    for (int i = 0; i < traj.size() - 1; i++)
+    {
+        if (traj[i].timestamp > traj[i + 1].timestamp)
+        {
+            throw std::invalid_argument("Trajectory timestamps must be in strictly ascending order");
+        }
+        if (traj[i].pos.size() != _dof || traj[i + 1].pos.size() != _dof)
+        {
+            throw std::invalid_argument("Joint state dimension mismatch");
+        }
+    }
+
+    JointState current_state{_dof};
+    if (current_time < _traj[0].timestamp)
+    {
+        throw std::runtime_error("Current time must be no less than start time");
+    }
+    else
+    {
+        current_state = interpolate(current_time);
+    }
+
+    std::vector<JointState> prev_traj = _traj;
+    _traj.clear();
+    _traj.push_back(current_state);
+    double new_traj_start_time = traj[0].timestamp;
+    // Merge prev_traj before new_traj
+
+    while (prev_traj.size() > 0 && prev_traj[0].timestamp < new_traj_start_time)
+    {
+        if (prev_traj[0].timestamp > current_time)
+        {
+            _traj.push_back(prev_traj[0]);
+        }
+        prev_traj.erase(prev_traj.begin());
+    }
+    while (traj.size() > 0)
+    {
+        _traj.push_back(traj[0]);
+        traj.erase(traj.begin());
     }
 }
 

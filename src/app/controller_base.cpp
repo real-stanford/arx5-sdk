@@ -199,7 +199,7 @@ void Arx5ControllerBase::reset_to_home()
     target_state.timestamp = get_timestamp() + 0.5;
     {
         std::lock_guard<std::mutex> lock(_cmd_mutex);
-        _interpolator.update(get_timestamp(), target_state);
+        _interpolator.update_traj(get_timestamp(), std::vector<JointState>{target_state});
     }
     _logger->info("Finish reset to home");
     _background_send_recv_running = prev_running;

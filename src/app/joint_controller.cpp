@@ -34,7 +34,7 @@ void Arx5JointController::set_joint_cmd(JointState new_cmd)
         // Will override the entire interpolator object
         _interpolator.init_fixed(new_cmd);
     else
-        _interpolator.update(current_time, new_cmd);
+        _interpolator.update_traj(get_timestamp(), std::vector<JointState>{new_cmd});
 }
 
 void Arx5JointController::recv_once()

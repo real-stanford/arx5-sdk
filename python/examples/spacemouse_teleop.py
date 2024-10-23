@@ -123,7 +123,7 @@ def start_teleop_recording(controller: Arx5CartesianController):
                 output_eef_cmd = controller.get_eef_cmd()
                 eef_state = controller.get_eef_state()
 
-                # print(output_eef_cmd.pose_6d() - eef_state.pose_6d())
+                print(output_eef_cmd.pose_6d() - eef_state.pose_6d())
                 
 
 
