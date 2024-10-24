@@ -179,7 +179,7 @@ void Arx5ControllerBase::reset_to_home()
     target_state.pos[2] = 0.03; // avoiding clash
 
     {
-        std::lock_guard<std::mutex> lock(_cmd_mutex);
+        std::lock_guard<std::mutex> guard(_cmd_mutex);
         JointState start_state{_robot_config.joint_dof};
         start_state.pos = init_state.pos;
         start_state.gripper_pos = init_state.gripper_pos;
@@ -198,8 +198,8 @@ void Arx5ControllerBase::reset_to_home()
     target_state.pos[2] = 0.0;
     target_state.timestamp = get_timestamp() + 0.5;
     {
-        std::lock_guard<std::mutex> lock(_cmd_mutex);
-        _interpolator.update_traj(get_timestamp(), std::vector<JointState>{target_state});
+        std::lock_guard<std::mutex> guard(_cmd_mutex);
+        _interpolator.override_waypoint(get_timestamp(), target_state);
     }
     _logger->info("Finish reset to home");
     _background_send_recv_running = prev_running;
@@ -213,7 +213,7 @@ void Arx5ControllerBase::set_to_damping()
     sleep_ms(10);
     JointState joint_state = get_joint_state();
     {
-        std::lock_guard<std::mutex> lock(_cmd_mutex);
+        std::lock_guard<std::mutex> guard(_cmd_mutex);
         joint_state.vel = VecDoF::Zero(_robot_config.joint_dof);
         joint_state.torque = VecDoF::Zero(_robot_config.joint_dof);
         _interpolator.init_fixed(joint_state);
@@ -241,6 +241,7 @@ void Arx5ControllerBase::_init_robot()
     init_joint_state.torque = VecDoF::Zero(_robot_config.joint_dof);
     set_gain(gain); // set to damping by default
 
+    std::lock_guard<std::mutex> guard(_state_mutex);
     // Check whether any motor has non-zero position
     if (_joint_state.pos == VecDoF::Zero(_robot_config.joint_dof))
     {
@@ -249,7 +250,7 @@ void Arx5ControllerBase::_init_robot()
             "None of the motors are initialized. Please check the connection or power of the arm.");
     }
     {
-        std::lock_guard<std::mutex> lock(_cmd_mutex);
+        std::lock_guard<std::mutex> guard(_cmd_mutex);
         _output_joint_cmd = init_joint_state;
         _interpolator.init_fixed(init_joint_state);
     }
@@ -264,6 +265,8 @@ void Arx5ControllerBase::_init_robot()
 
 void Arx5ControllerBase::_check_joint_state_sanity()
 {
+    std::lock_guard<std::mutex> guard(_state_mutex);
+
     for (int i = 0; i < _robot_config.joint_dof; ++i)
     {
         if (std::abs(_joint_state.pos[i]) > _robot_config.joint_pos_max[i] + 3.14 ||
@@ -366,7 +369,7 @@ void Arx5ControllerBase::_update_joint_state()
     const double torque_constant_DM_J4310 = 0.424;
     const double torque_constant_DM_J4340 = 1.0;
     std::array<OD_Motor_Msg, 10> motor_msg = _can_handle.get_motor_msg();
-    std::lock_guard<std::mutex> guard_state(_state_mutex);
+    std::lock_guard<std::mutex> guard(_state_mutex);
 
     for (int i = 0; i < _robot_config.joint_dof; i++)
     {
@@ -414,6 +417,7 @@ void Arx5ControllerBase::_update_output_cmd()
         _output_joint_cmd = _interpolator.interpolate(timestamp);
     }
 
+    std::lock_guard<std::mutex> guard(_state_mutex);
     if (_controller_config.gravity_compensation)
     {
         _output_joint_cmd.torque += _solver->inverse_dynamics(_joint_state.pos, VecDoF::Zero(_robot_config.joint_dof),
@@ -543,7 +547,7 @@ void Arx5ControllerBase::_send_recv()
     {
         int start_send_motor_time_us = get_time_us();
         {
-            std::lock_guard<std::mutex> lock(_cmd_mutex);
+            std::lock_guard<std::mutex> guard(_cmd_mutex);
             if (_robot_config.motor_type[i] == MotorType::EC_A4310)
             {
                 _can_handle.send_EC_motor_cmd(_robot_config.motor_id[i], _gain.kp[i], _gain.kd[i],

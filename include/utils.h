@@ -3,7 +3,7 @@
 #include "app/common.h"
 #include <Eigen/Core>
 #include <string>
-
+#include <vector>
 namespace arx
 {
 class MovingAverageXd
@@ -31,8 +31,10 @@ class JointStateInterpolator
     ~JointStateInterpolator() = default;
     void init(JointState start_state, JointState end_state);
     void init_fixed(JointState start_state);
-    void insert_waypoint(double current_time, JointState end_state);
-    void update_traj(double current_time, std::vector<JointState> traj);
+    void append_waypoint(double current_time, JointState end_state);
+    void append_traj(double current_time, std::vector<JointState> traj);
+    void override_waypoint(double current_time, JointState end_state);
+    void override_traj(double current_time, std::vector<JointState> traj);
     JointState interpolate(double time);
     std::string to_string();
     bool is_initialized();
@@ -44,6 +46,7 @@ class JointStateInterpolator
     std::vector<JointState> _traj;
 };
 
+void calc_joint_vel(std::vector<JointState> &traj);
 // std::string vec2str(const Eigen::VectorXd& vec, int precision = 3);
 
 std::string state2str(const JointState &state, int precision = 3);

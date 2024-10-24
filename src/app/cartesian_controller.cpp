@@ -47,13 +47,46 @@ void Arx5CartesianController::set_eef_cmd(EEFState new_cmd)
 
     double current_time = get_timestamp();
     // TODO: include velocity
-    std::lock_guard<std::mutex> lock(_cmd_mutex);
-    _interpolator.update_traj(get_timestamp(), std::vector<JointState>{target_joint_state});
+    std::lock_guard<std::mutex> guard(_cmd_mutex);
+    _interpolator.override_waypoint(get_timestamp(), target_joint_state);
 
     if (ik_status != 0)
     {
         _logger->warn("Inverse kinematics failed: {} ({})", _solver->get_ik_status_name(ik_status), ik_status);
     }
+}
+
+void Arx5CartesianController::set_eef_traj(std::vector<EEFState> new_traj)
+{
+    std::vector<JointState> joint_traj;
+    for (auto eef_state : new_traj)
+    {
+        if (eef_state.timestamp == 0)
+            throw std::invalid_argument("EEFState timestamp must be set for all waypoints");
+        JointState current_joint_state = get_joint_state();
+        std::tuple<int, VecDoF> ik_results;
+        ik_results = _solver->multi_trial_ik(eef_state.pose_6d, current_joint_state.pos);
+        int ik_status = std::get<0>(ik_results);
+
+        JointState target_joint_state{_robot_config.joint_dof};
+        target_joint_state.pos = std::get<1>(ik_results);
+        target_joint_state.gripper_pos = eef_state.gripper_pos;
+        target_joint_state.timestamp = eef_state.timestamp;
+
+        joint_traj.push_back(target_joint_state);
+
+        if (ik_status != 0)
+        {
+            _logger->warn("Inverse kinematics failed: {} ({})", _solver->get_ik_status_name(ik_status), ik_status);
+        }
+    }
+
+    // Include velocity: first and last point based on current state, others based on neighboring points
+    calc_joint_vel(joint_traj);
+
+    double current_time = get_timestamp();
+    std::lock_guard<std::mutex> guard(_cmd_mutex);
+    _interpolator.override_traj(get_timestamp(), joint_traj);
 }
 
 EEFState Arx5CartesianController::get_eef_cmd()

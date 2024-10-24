@@ -27,6 +27,7 @@ class Arx5CartesianController : public Arx5ControllerBase
     Arx5CartesianController(std::string model, std::string interface_name, std::string urdf_path);
 
     void set_eef_cmd(EEFState new_cmd);
+    void set_eef_traj(std::vector<EEFState> new_traj);
     EEFState get_eef_cmd();
 };
 } // namespace arx

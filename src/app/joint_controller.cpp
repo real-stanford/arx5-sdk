@@ -28,13 +28,13 @@ void Arx5JointController::set_joint_cmd(JointState new_cmd)
     if (new_cmd.timestamp == 0)
         new_cmd.timestamp = current_time + _controller_config.default_preview_time;
 
-    std::lock_guard<std::mutex> lock(_cmd_mutex);
+    std::lock_guard<std::mutex> guard(_cmd_mutex);
     if (abs(new_cmd.timestamp - current_time) < 1e-3)
         // If the new timestamp is close enough (<1ms) to the current time
         // Will override the entire interpolator object
         _interpolator.init_fixed(new_cmd);
     else
-        _interpolator.update_traj(get_timestamp(), std::vector<JointState>{new_cmd});
+        _interpolator.override_waypoint(get_timestamp(), new_cmd);
 }
 
 void Arx5JointController::recv_once()

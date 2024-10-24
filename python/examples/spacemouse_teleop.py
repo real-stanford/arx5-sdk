@@ -35,10 +35,10 @@ def start_teleop_recording(controller: Arx5CartesianController):
 
     window_size = 3
     cmd_dt = 0.01
+    traj_length_s = 0.1  # Every 0.1s, the controller will send a new trajectory command
     preview_time = 0.1
     spacemouse_queue = Queue(window_size)
     robot_config = controller.get_robot_config()
-    controller_config = controller.get_controller_config()
 
     with SharedMemoryManager() as shm_manager:
         with Spacemouse(
@@ -76,6 +76,7 @@ def start_teleop_recording(controller: Arx5CartesianController):
                     break
             start_time = time.monotonic()
             loop_cnt = 0
+            eef_traj = []
             while True:
 
                 print(
@@ -115,17 +116,21 @@ def start_teleop_recording(controller: Arx5CartesianController):
                 eef_cmd = EEFState()
                 eef_cmd.pose_6d()[:] = target_pose_6d
                 eef_cmd.gripper_pos = target_gripper_pos
-                # If you are using controller_config.default_preview_time,
-                # directly use eef_cmd.timestamp=0 will have the same effect
-                # eef_cmd.timestamp = current_timestamp + preview_time
-                controller.set_eef_cmd(eef_cmd)
+                eef_cmd.timestamp = current_timestamp + preview_time
+                eef_traj.append(eef_cmd)
+
+                # Send a trajectory command every traj_length_s
+                if loop_cnt % int(traj_length_s / cmd_dt) == 0:
+                    controller.set_eef_traj(eef_traj)
+                    eef_traj = eef_traj[-1:]  # Only keep the last element
+
+                # Or sending single eef_cmd:
+                # controller.set_eef_cmd(eef_cmd)
 
                 output_eef_cmd = controller.get_eef_cmd()
                 eef_state = controller.get_eef_state()
 
                 print(output_eef_cmd.pose_6d() - eef_state.pose_6d())
-                
-
 
 
 @click.command()
