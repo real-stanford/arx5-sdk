@@ -241,7 +241,7 @@ void Arx5ControllerBase::_init_robot()
     init_joint_state.torque = VecDoF::Zero(_robot_config.joint_dof);
     set_gain(gain); // set to damping by default
 
-    std::lock_guard<std::mutex> guard(_state_mutex);
+    // std::lock_guard<std::mutex> guard(_state_mutex);
     // Check whether any motor has non-zero position
     if (_joint_state.pos == VecDoF::Zero(_robot_config.joint_dof))
     {

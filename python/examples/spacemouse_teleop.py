@@ -22,6 +22,23 @@ from multiprocessing.managers import SharedMemoryManager
 import time
 import click
 
+def smoothen_eef_traj(eef_traj, window_size):
+    eef_traj_smoothed = []
+    for i in range(len(eef_traj)):
+        if i < window_size:
+            eef_traj_smoothed.append(eef_traj[i])
+        else:
+            eef_cmd = EEFState()
+            eef_cmd.pose_6d()[:] = np.mean(
+                [eef_traj[j].pose_6d() for j in range(i - window_size, i)], axis=0
+            )
+            eef_cmd.gripper_pos = np.mean(
+                [eef_traj[j].gripper_pos for j in range(i - window_size, i)], axis=0
+            )
+            eef_cmd.timestamp = eef_traj[i].timestamp
+            eef_traj_smoothed.append(eef_cmd)
+    return eef_traj_smoothed
+
 
 def start_teleop_recording(controller: Arx5CartesianController):
 
@@ -121,6 +138,7 @@ def start_teleop_recording(controller: Arx5CartesianController):
 
                 # Send a trajectory command every traj_length_s
                 if loop_cnt % int(traj_length_s / cmd_dt) == 0:
+                    # eef_traj = smoothen_eef_traj(eef_traj, window_size=5)
                     controller.set_eef_traj(eef_traj)
                     eef_traj = eef_traj[-1:]  # Only keep the last element
 
