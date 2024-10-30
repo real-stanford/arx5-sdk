@@ -29,6 +29,9 @@ class Arx5CartesianController : public Arx5ControllerBase
     void set_eef_cmd(EEFState new_cmd);
     void set_eef_traj(std::vector<EEFState> new_traj);
     EEFState get_eef_cmd();
+
+    std::tuple<int, Eigen::VectorXd> multi_trial_ik(Eigen::Matrix<double, 6, 1> target_pose_6d,
+                                                    Eigen::VectorXd current_joint_pos, int additional_trial_num = 5);
 };
 } // namespace arx
 

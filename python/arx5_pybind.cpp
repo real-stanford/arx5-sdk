@@ -92,6 +92,7 @@ PYBIND11_MODULE(arx5_interface, m)
         .def("get_robot_config", &Arx5CartesianController::get_robot_config)
         .def("get_controller_config", &Arx5CartesianController::get_controller_config)
         .def("reset_to_home", &Arx5CartesianController::reset_to_home)
+        .def("multi_trial_ik", &Arx5CartesianController::multi_trial_ik)
         .def("set_to_damping", &Arx5CartesianController::set_to_damping);
     py::class_<Arx5Solver>(m, "Arx5Solver")
         .def(py::init<const std::string &, int, Eigen::VectorXd, Eigen::VectorXd>())
