@@ -14,9 +14,8 @@ import numpy as np
 @click.command()
 @click.argument("model")  # ARX arm model: X5 or L5
 @click.argument("interface")  # can bus name (can0 etc.)
-@click.option("--urdf_path", "-u", default="../models/arx5.urdf", help="URDF file path")
-def main(model: str, interface: str, urdf_path: str):
-    controller = arx5.Arx5JointController(model, interface, urdf_path)
+def main(model: str, interface: str):
+    controller = arx5.Arx5JointController(model, interface)
     controller.set_log_level(arx5.LogLevel.DEBUG)
     controller.reset_to_home()
     joint_waypoints = np.array(

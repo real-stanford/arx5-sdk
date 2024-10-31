@@ -5,7 +5,7 @@
 
 using namespace arx;
 
-Arx5JointController *arx5_joint_controller = new Arx5JointController("L5", "can0", "../models/arx5.urdf");
+Arx5JointController *arx5_joint_controller = new Arx5JointController("L5", "can0");
 
 void signal_handler(int signal)
 {

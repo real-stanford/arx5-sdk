@@ -20,8 +20,8 @@ def easeInOutQuad(t):
 
 def main():
     np.set_printoptions(precision=3, suppress=True)
-    arx5_0 = arx5.Arx5JointController("X5", "can0", "../models/arx5.urdf")
-    arx5_1 = arx5.Arx5JointController("X5", "can1", "../models/arx5.urdf")
+    arx5_0 = arx5.Arx5JointController("X5", "can0")
+    arx5_1 = arx5.Arx5JointController("X5", "can1")
     robot_config = arx5_0.get_robot_config()
     controller_config = arx5_0.get_controller_config()
 

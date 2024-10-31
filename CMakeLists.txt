@@ -15,8 +15,8 @@ find_package(fmt REQUIRED)
 find_package(spdlog REQUIRED)
 find_package(Boost REQUIRED COMPONENTS container)
 
-set(ARX_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
-add_definitions(-DARX_DIRECTORY="${ARX_DIRECTORY}") # TODO: remove this
+add_compile_definitions(SDK_ROOT="${CMAKE_BINARY_DIR}/..")
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 if(CMAKE_SYSTEM_PROCESSOR MATCHES "arm.*|arm|aarch64")
     set(LIB_DIR ${CMAKE_CURRENT_SOURCE_DIR}/lib/aarch64)

@@ -20,7 +20,7 @@ def easeInOutQuad(t):
 
 def main():
     np.set_printoptions(precision=3, suppress=True)
-    x7_left = arx5.Arx5JointController("X7Left", "can0", "../models/arx7_left.urdf")
+    x7_left = arx5.Arx5JointController("X7Left", "can0")
     x7_left_config = x7_left.get_robot_config()
     # x7_left = arx5.Arx5JointController("X7Left", "can1")
     # x7_left.set_log_level(arx5.LogLevel.DEBUG)

@@ -22,6 +22,7 @@ from multiprocessing.managers import SharedMemoryManager
 import time
 import click
 
+
 def smoothen_eef_traj(eef_traj, window_size):
     eef_traj_smoothed = []
     for i in range(len(eef_traj)):
@@ -136,14 +137,14 @@ def start_teleop_recording(controller: Arx5CartesianController):
                 eef_cmd.timestamp = current_timestamp + preview_time
                 eef_traj.append(eef_cmd)
 
-                # Send a trajectory command every traj_length_s
-                if loop_cnt % int(traj_length_s / cmd_dt) == 0:
-                    # eef_traj = smoothen_eef_traj(eef_traj, window_size=5)
-                    controller.set_eef_traj(eef_traj)
-                    eef_traj = eef_traj[-1:]  # Only keep the last element
+                # # Send a trajectory command every traj_length_s
+                # if loop_cnt % int(traj_length_s / cmd_dt) == 0:
+                #     # eef_traj = smoothen_eef_traj(eef_traj, window_size=5)
+                #     controller.set_eef_traj(eef_traj)
+                #     eef_traj = eef_traj[-1:]  # Only keep the last element
 
                 # Or sending single eef_cmd:
-                # controller.set_eef_cmd(eef_cmd)
+                controller.set_eef_cmd(eef_cmd)
 
                 output_eef_cmd = controller.get_eef_cmd()
                 eef_state = controller.get_eef_state()
@@ -154,8 +155,7 @@ def start_teleop_recording(controller: Arx5CartesianController):
 @click.command()
 @click.argument("model")  # ARX arm model: X5 or L5
 @click.argument("interface")  # can bus name (can0 etc.)
-@click.option("--urdf_path", "-u", default="../models/arx5.urdf", help="URDF file path")
-def main(model: str, interface: str, urdf_path: str):
+def main(model: str, interface: str):
 
     robot_config = RobotConfigFactory.get_instance().get_config(model)
     controller_config = ControllerConfigFactory.get_instance().get_config(
@@ -163,9 +163,7 @@ def main(model: str, interface: str, urdf_path: str):
     )
     # controller_config.interpolation_method = "cubic"
     controller_config.default_kp = controller_config.default_kp
-    controller = Arx5CartesianController(
-        robot_config, controller_config, interface, urdf_path
-    )
+    controller = Arx5CartesianController(robot_config, controller_config, interface)
     controller.reset_to_home()
 
     robot_config = controller.get_robot_config()

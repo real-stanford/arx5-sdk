@@ -40,17 +40,20 @@ class RobotConfig
     std::string base_link_name;
     std::string eef_link_name;
 
+    std::string urdf_path;
+
     RobotConfig(std::string robot_model, VecDoF joint_pos_min, VecDoF joint_pos_max, VecDoF joint_vel_max,
                 VecDoF joint_torque_max, Pose6d ee_vel_max, double gripper_vel_max, double gripper_torque_max,
                 double gripper_width, double gripper_open_readout, int joint_dof, std::vector<int> motor_id,
                 std::vector<MotorType> motor_type, int gripper_motor_id, MotorType gripper_motor_type,
-                Eigen::Vector3d gravity_vector, std::string base_link_name, std::string eef_link_name)
+                Eigen::Vector3d gravity_vector, std::string base_link_name, std::string eef_link_name,
+                std::string urdf_path)
         : robot_model(robot_model), joint_pos_min(joint_pos_min), joint_pos_max(joint_pos_max),
           joint_vel_max(joint_vel_max), joint_torque_max(joint_torque_max), ee_vel_max(ee_vel_max),
           gripper_vel_max(gripper_vel_max), gripper_torque_max(gripper_torque_max), gripper_width(gripper_width),
           gripper_open_readout(gripper_open_readout), joint_dof(joint_dof), motor_id(motor_id), motor_type(motor_type),
           gripper_motor_id(gripper_motor_id), gripper_motor_type(gripper_motor_type), gravity_vector(gravity_vector),
-          base_link_name(base_link_name), eef_link_name(eef_link_name)
+          base_link_name(base_link_name), eef_link_name(eef_link_name), urdf_path(urdf_path)
     {
     }
 };
@@ -83,11 +86,11 @@ class RobotConfigFactory
         configurations["X5"] = std::make_shared<RobotConfig>(
             "X5",                                                          // robot_model
             (VecDoF(6) << -3.14, -0.05, -0.1, -1.6, -1.57, -2).finished(), // joint_pos_min
-            (VecDoF(6) << 2.618, 3.14, 3.24, 1.55, 1.57, 2).finished(),    // joint_pos_max
+            (VecDoF(6) << 2.618, 3.50, 3.10, 1.55, 1.57, 2).finished(),    // joint_pos_max
             (VecDoF(6) << 5.0, 5.0, 5.5, 5.5, 5.0, 5.0).finished(),        // joint_vel_max
             (VecDoF(6) << 30.0, 40.0, 30.0, 15.0, 10.0, 10.0).finished(),  // joint_torque_max
             (Pose6d() << 0.6, 0.6, 0.6, 1.8, 1.8, 1.8).finished(),         // ee_vel_max
-            0.1,                                                           // gripper_vel_max
+            0.3,                                                           // gripper_vel_max
             1.5,                                                           // gripper_torque_max
             0.088,                                                         // gripper_width
             5.03,                                                          // gripper_open_readout
@@ -99,16 +102,17 @@ class RobotConfigFactory
             MotorType::DM_J4310,                                              // gripper_motor_type
             (Eigen::Vector3d() << 0, 0, -9.807).finished(),                   // gravity_vector
             "base_link",                                                      // base_link_name
-            "eef_link"                                                        // eef_link_name
+            "eef_link",                                                       // eef_link_name
+            std::string(SDK_ROOT) + "/models/X5.urdf"                         // urdf_path
         );
         configurations["L5"] = std::make_shared<RobotConfig>(
             "L5",                                                          // robot_model
             (VecDoF(6) << -3.14, -0.05, -0.1, -1.6, -1.57, -2).finished(), // joint_pos_min
-            (VecDoF(6) << 2.618, 3.14, 3.24, 1.55, 1.57, 2).finished(),    // joint_pos_max
+            (VecDoF(6) << 2.618, 3.50, 3.10, 1.55, 1.57, 2).finished(),    // joint_pos_max
             (VecDoF(6) << 5.0, 5.0, 5.5, 5.5, 5.0, 5.0).finished(),        // joint_vel_max
             (VecDoF(6) << 30.0, 40.0, 30.0, 15.0, 10.0, 10.0).finished(),  // joint_torque_max
             (Pose6d() << 0.6, 0.6, 0.6, 1.8, 1.8, 1.8).finished(),         // ee_vel_max
-            0.1,                                                           // gripper_vel_max
+            0.3,                                                           // gripper_vel_max
             1.5,                                                           // gripper_torque_max
             0.088,                                                         // gripper_width
             5.03,                                                          // gripper_open_readout
@@ -120,7 +124,8 @@ class RobotConfigFactory
             MotorType::DM_J4310,                                              // gripper_motor_type
             (Eigen::Vector3d() << 0, 0, -9.807).finished(),                   // gravity_vector
             "base_link",                                                      // base_link_name
-            "eef_link"                                                        // eef_link_name
+            "eef_link",                                                       // eef_link_name
+            std::string(SDK_ROOT) + "/models/L5.urdf"                         // urdf_path
         );
         configurations["X7Left"] = std::make_shared<RobotConfig>(
             "X7Left",                                                                  // robot_model
@@ -129,7 +134,7 @@ class RobotConfigFactory
             (VecDoF(7) << 3.0, 5.0, 5.0, 5.5, 5.5, 5.0, 5.0).finished(),               // joint_vel_max
             (VecDoF(7) << 30.0, 30.0, 40.0, 30.0, 15.0, 10.0, 10.0).finished(),        // joint_torque_max
             (Pose6d() << 0.6, 0.6, 0.6, 1.8, 1.8, 1.8).finished(),                     // ee_vel_max
-            0.1,                                                                       // gripper_vel_max
+            0.3,                                                                       // gripper_vel_max
             1.5,                                                                       // gripper_torque_max
             0.088,                                                                     // gripper_width
             5.03,                                                                      // gripper_open_readout
@@ -141,7 +146,8 @@ class RobotConfigFactory
             MotorType::DM_J4310,                                                                   // gripper_motor_type
             (Eigen::Vector3d() << 0, 0, -9.807).finished(),                                        // gravity_vector
             "base_link",                                                                           // base_link_name
-            "eef_link"                                                                             // eef_link_name
+            "eef_link",                                                                            // eef_link_name
+            std::string(SDK_ROOT) + "/models/X7_left.urdf"                                         // urdf_path
         );
         configurations["X7Right"] = std::make_shared<RobotConfig>(
             "X7Right",                                                                    // robot_model
@@ -150,7 +156,7 @@ class RobotConfigFactory
             (VecDoF(7) << 3.0, 5.0, 5.0, 5.5, 5.5, 5.0, 5.0).finished(),                  // joint_vel_max
             (VecDoF(7) << 30.0, 30.0, 40.0, 30.0, 15.0, 10.0, 10.0).finished(),           // joint_torque_max
             (Pose6d() << 0.6, 0.6, 0.6, 1.8, 1.8, 1.8).finished(),                        // ee_vel_max
-            0.1,                                                                          // gripper_vel_max
+            0.3,                                                                          // gripper_vel_max
             1.5,                                                                          // gripper_torque_max
             0.088,                                                                        // gripper_width
             5.03,                                                                         // gripper_open_readout
@@ -162,7 +168,8 @@ class RobotConfigFactory
             MotorType::DM_J4310,                                                                   // gripper_motor_type
             (Eigen::Vector3d() << 0, 0, -9.807).finished(),                                        // gravity_vector
             "base_link",                                                                           // base_link_name
-            "eef_link"                                                                             // eef_link_name
+            "eef_link",                                                                            // eef_link_name
+            std::string(SDK_ROOT) + "/models/X7_right.urdf"                                        // urdf_path
         );
     }
 

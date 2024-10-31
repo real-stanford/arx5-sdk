@@ -5,7 +5,7 @@
 
 using namespace arx;
 
-Arx5CartesianController *arx5_cartesian_controller = new Arx5CartesianController("L5", "can0", "../models/arx5.urdf");
+Arx5CartesianController *arx5_cartesian_controller = new Arx5CartesianController("L5", "can0");
 
 void signal_handler(int signal)
 {

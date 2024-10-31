@@ -22,9 +22,8 @@ namespace arx
 class Arx5CartesianController : public Arx5ControllerBase
 {
   public:
-    Arx5CartesianController(RobotConfig robot_config, ControllerConfig controller_config, std::string interface_name,
-                            std::string urdf_path);
-    Arx5CartesianController(std::string model, std::string interface_name, std::string urdf_path);
+    Arx5CartesianController(RobotConfig robot_config, ControllerConfig controller_config, std::string interface_name);
+    Arx5CartesianController(std::string model, std::string interface_name);
 
     void set_eef_cmd(EEFState new_cmd);
     void set_eef_traj(std::vector<EEFState> new_traj);

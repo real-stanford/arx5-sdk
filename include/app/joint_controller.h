@@ -21,9 +21,8 @@ namespace arx
 class Arx5JointController : public Arx5ControllerBase
 {
   public:
-    Arx5JointController(RobotConfig robot_config, ControllerConfig controller_config, std::string interface_name,
-                        std::string urdf_path);
-    Arx5JointController(std::string model, std::string interface_name, std::string urdf_path);
+    Arx5JointController(RobotConfig robot_config, ControllerConfig controller_config, std::string interface_name);
+    Arx5JointController(std::string model, std::string interface_name);
 
     void set_joint_cmd(JointState new_cmd);
 

@@ -7,17 +7,17 @@
 using namespace arx;
 
 Arx5JointController::Arx5JointController(RobotConfig robot_config, ControllerConfig controller_config,
-                                         std::string interface_name, std::string urdf_path)
-    : Arx5ControllerBase(robot_config, controller_config, interface_name, urdf_path)
+                                         std::string interface_name)
+    : Arx5ControllerBase(robot_config, controller_config, interface_name)
 {
 }
 
-Arx5JointController::Arx5JointController(std::string model, std::string interface_name, std::string urdf_path)
+Arx5JointController::Arx5JointController(std::string model, std::string interface_name)
     : Arx5JointController::Arx5JointController(
           RobotConfigFactory::get_instance().get_config(model),
           ControllerConfigFactory::get_instance().get_config(
               "joint_controller", RobotConfigFactory::get_instance().get_config(model).joint_dof),
-          interface_name, urdf_path)
+          interface_name)
 {
 }
 
