@@ -19,8 +19,7 @@ namespace arx
 class Arx5ControllerBase // parent class for the other two controllers
 {
   public:
-    Arx5ControllerBase(RobotConfig robot_config, ControllerConfig controller_config, std::string interface_name,
-                       std::string urdf_path);
+    Arx5ControllerBase(RobotConfig robot_config, ControllerConfig controller_config, std::string interface_name);
     ~Arx5ControllerBase();
     JointState get_joint_cmd();
     JointState get_joint_state();

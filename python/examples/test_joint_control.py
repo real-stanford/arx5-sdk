@@ -23,8 +23,7 @@ def easeInOutQuad(t):
 @click.command()
 @click.argument("model")  # ARX arm model: X5 or L5
 @click.argument("interface")  # can bus name (can0 etc.)
-@click.option("--urdf_path", "-u", default="../models/arx5.urdf", help="URDF file path")
-def main(model: str, interface: str, urdf_path: str):
+def main(model: str, interface: str):
 
     # To initialize robot with different configurations,
     # you can create RobotConfig and ControllerConfig by yourself and modify based on it
@@ -45,7 +44,7 @@ def main(model: str, interface: str, urdf_path: str):
         controller_config.background_send_recv = False
 
     arx5_joint_controller = arx5.Arx5JointController(
-        robot_config, controller_config, interface, urdf_path
+        robot_config, controller_config, interface
     )
 
     # Or you can directly use the model and interface name

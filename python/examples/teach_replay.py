@@ -105,9 +105,8 @@ def start_high_level_replay(controller: Arx5CartesianController, data_file: str)
 @click.command()
 @click.argument("model")  # ARX arm model: X5 or L5
 @click.argument("interface")  # can bus name (can0 etc.)
-@click.option("--urdf_path", "-u", default="../models/arx5.urdf", help="URDF file path")
-def main(model: str, interface: str, urdf_path: str):
-    controller = Arx5CartesianController(model, interface, urdf_path)
+def main(model: str, interface: str):
+    controller = Arx5CartesianController(model, interface)
 
     np.set_printoptions(precision=4, suppress=True)
     os.makedirs("data", exist_ok=True)

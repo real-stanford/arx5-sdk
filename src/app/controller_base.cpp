@@ -8,16 +8,16 @@
 using namespace arx;
 
 Arx5ControllerBase::Arx5ControllerBase(RobotConfig robot_config, ControllerConfig controller_config,
-                                       std::string interface_name, std::string urdf_path)
+                                       std::string interface_name)
     : _can_handle(interface_name),
       _logger(spdlog::stdout_color_mt(robot_config.robot_model + std::string("_") + interface_name)),
       _robot_config(robot_config), _controller_config(controller_config)
 {
     _start_time_us = get_time_us();
     _logger->set_pattern("[%H:%M:%S %n %^%l%$] %v");
-    _solver = std::make_shared<Arx5Solver>(urdf_path, _robot_config.joint_dof, _robot_config.joint_pos_min,
-                                           _robot_config.joint_pos_max, _robot_config.base_link_name,
-                                           _robot_config.eef_link_name, _robot_config.gravity_vector);
+    _solver = std::make_shared<Arx5Solver>(
+        _robot_config.urdf_path, _robot_config.joint_dof, _robot_config.joint_pos_min, _robot_config.joint_pos_max,
+        _robot_config.base_link_name, _robot_config.eef_link_name, _robot_config.gravity_vector);
     if (_robot_config.robot_model == "X5" && !_controller_config.shutdown_to_passive)
     {
         _logger->warn("When shutting down X5 robot arms, the motors have to be set to passive. "

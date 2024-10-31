@@ -22,7 +22,7 @@ solver = arx5.Arx5Solver(
     # np.array([0, 0, -9.807], dtype=np.float64),
 )
 
-# solver = arx5.Arx5Solver("../models/arx5_gopro.urdf", joint_dof)
+# solver = arx5.Arx5Solver("../models/arx5_umi.urdf", joint_dof)
 
 # joint_dof = 7
 # solver = arx5.Arx5Solver(

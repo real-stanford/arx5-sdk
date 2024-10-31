@@ -30,6 +30,7 @@ class RobotConfig:
     gravity_vector: np.ndarray
     base_link_name: str
     eef_link_name: str
+    urdf_path: str
 
 class ControllerConfig:
     """Does not have a constructor, use ControllerConfigFactory.get_instance().get_config(...) instead."""
@@ -111,7 +112,6 @@ class Arx5JointController:
         self,
         model: str,
         interface_name: str,
-        urdf_path: str,
     ) -> None: ...
     @overload
     def __init__(
@@ -119,7 +119,6 @@ class Arx5JointController:
         robot_config: RobotConfig,
         controller_config: ControllerConfig,
         interface_name: str,
-        urdf_path: str,
     ) -> None: ...
     def send_recv_once(self) -> None: ...
     def recv_once(self) -> None: ...
@@ -156,14 +155,13 @@ class EEFState:
 
 class Arx5CartesianController:
     @overload
-    def __init__(self, model: str, interface_name: str, urdf_path: str) -> None: ...
+    def __init__(self, model: str, interface_name: str) -> None: ...
     @overload
     def __init__(
         self,
         robot_config: RobotConfig,
         controller_config: ControllerConfig,
         interface_name: str,
-        urdf_path: str,
     ) -> None: ...
     def set_eef_cmd(self, cmd: EEFState) -> None: ...
     def set_eef_traj(self, traj: list[EEFState]) -> None: ...

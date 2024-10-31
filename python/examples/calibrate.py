@@ -12,9 +12,8 @@ import arx5_interface as arx5
 @click.command()
 @click.argument("model")  # ARX arm model: X5 or L5
 @click.argument("interface")  # can bus name (can0 etc.)
-@click.option("--urdf_path", "-u", default="../models/arx5.urdf", help="URDF file path")
-def calibrate_joint(model: str, interface: str, joint_id: int, urdf_path: str):
-    joint_controller = arx5.Arx5JointController(model, interface, urdf_path)
+def calibrate_joint(model: str, interface: str, joint_id: int):
+    joint_controller = arx5.Arx5JointController(model, interface)
     gain = arx5.Gain(joint_controller.get_robot_config().joint_dof)
     joint_controller.set_gain(gain)
     joint_controller.calibrate_joint(joint_id)
@@ -28,9 +27,8 @@ def calibrate_joint(model: str, interface: str, joint_id: int, urdf_path: str):
 @click.command()
 @click.argument("model")  # ARX arm model: X5 or L5
 @click.argument("interface")  # can bus name (can0 etc.)
-@click.option("--urdf_path", "-u", default="../models/arx5.urdf", help="URDF file path")
-def calibrate_gripper(model: str, interface: str, urdf_path: str):
-    joint_controller = arx5.Arx5JointController(model, interface, urdf_path)
+def calibrate_gripper(model: str, interface: str):
+    joint_controller = arx5.Arx5JointController(model, interface)
     joint_controller.calibrate_gripper()
 
 
