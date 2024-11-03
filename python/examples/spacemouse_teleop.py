@@ -55,6 +55,8 @@ def start_teleop_recording(controller: Arx5CartesianController):
     cmd_dt = 0.01
     traj_length_s = 0.1  # Every 0.1s, the controller will send a new trajectory command
     preview_time = 0.1
+
+    pose_x_min = target_pose_6d[0]
     spacemouse_queue = Queue(window_size)
     robot_config = controller.get_robot_config()
 
@@ -132,6 +134,8 @@ def start_teleop_recording(controller: Arx5CartesianController):
                     pass
                 current_timestamp = controller.get_timestamp()
                 eef_cmd = EEFState()
+                if target_pose_6d[0] < pose_x_min:
+                    target_pose_6d[0] = pose_x_min
                 eef_cmd.pose_6d()[:] = target_pose_6d
                 eef_cmd.gripper_pos = target_gripper_pos
                 eef_cmd.timestamp = current_timestamp + preview_time
