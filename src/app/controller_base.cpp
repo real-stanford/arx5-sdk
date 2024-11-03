@@ -381,7 +381,7 @@ void Arx5ControllerBase::_update_joint_state()
         {
             _joint_state.torque[i] = motor_msg[_robot_config.motor_id[i]].current_actual_float *
                                      torque_constant_EC_A4310 * torque_constant_EC_A4310;
-            // Why there are two torque_constant_EC_A4310?
+            // Why are there two torque_constant_EC_A4310?
         }
         else if (_robot_config.motor_type[i] == MotorType::DM_J4310)
         {
@@ -423,6 +423,23 @@ void Arx5ControllerBase::_update_output_cmd()
         _output_joint_cmd.torque += _solver->inverse_dynamics(_joint_state.pos, VecDoF::Zero(_robot_config.joint_dof),
                                                               VecDoF::Zero(_robot_config.joint_dof));
     }
+
+    // Joint pos clipping
+    for (int i = 0; i < _robot_config.joint_dof; ++i)
+    {
+        if (_output_joint_cmd.pos[i] < _robot_config.joint_pos_min[i])
+        {
+            _logger->debug("Joint {} pos {:.3f} pos cmd clipped from {:.3f} to min {:.3f}", i, _joint_state.pos[i],
+                           _output_joint_cmd.pos[i], _robot_config.joint_pos_min[i]);
+            _output_joint_cmd.pos[i] = _robot_config.joint_pos_min[i];
+        }
+        else if (_output_joint_cmd.pos[i] > _robot_config.joint_pos_max[i])
+        {
+            _logger->debug("Joint {} pos {:.3f} pos cmd clipped from {:.3f} to max {:.3f}", i, _joint_state.pos[i],
+                           _output_joint_cmd.pos[i], _robot_config.joint_pos_max[i]);
+            _output_joint_cmd.pos[i] = _robot_config.joint_pos_max[i];
+        }
+    }
     // Joint velocity clipping
     double dt = _controller_config.controller_dt;
     for (int i = 0; i < _robot_config.joint_dof; ++i)
@@ -435,8 +452,12 @@ void Arx5ControllerBase::_update_output_cmd()
             if (std::abs(delta_pos) > max_vel * dt)
             {
                 double new_pos = prev_output_cmd.pos[i] + max_vel * dt * delta_pos / std::abs(delta_pos);
-                _logger->debug("Joint {} pos {:.3f} pos cmd clipped: {:.3f} to {:.3f}", i, _joint_state.pos[i],
-                               _output_joint_cmd.pos[i], new_pos);
+                if (new_pos > _robot_config.joint_pos_max[i])
+                    new_pos = _robot_config.joint_pos_max[i];
+                if (new_pos < _robot_config.joint_pos_min[i])
+                    new_pos = _robot_config.joint_pos_min[i];
+                _logger->debug("Joint velocity reaches limit: Joint {} pos {:.3f} pos cmd clipped: {:.3f} to {:.3f}", i,
+                               _joint_state.pos[i], _output_joint_cmd.pos[i], new_pos);
                 _output_joint_cmd.pos[i] = new_pos;
             }
         }
@@ -466,22 +487,6 @@ void Arx5ControllerBase::_update_output_cmd()
         }
     }
 
-    // Joint pos clipping
-    for (int i = 0; i < _robot_config.joint_dof; ++i)
-    {
-        if (_output_joint_cmd.pos[i] < _robot_config.joint_pos_min[i])
-        {
-            _logger->debug("Joint {} pos {:.3f} pos cmd clipped from {:.3f} to min {:.3f}", i, _joint_state.pos[i],
-                           _output_joint_cmd.pos[i], _robot_config.joint_pos_min[i]);
-            _output_joint_cmd.pos[i] = _robot_config.joint_pos_min[i];
-        }
-        else if (_output_joint_cmd.pos[i] > _robot_config.joint_pos_max[i])
-        {
-            _logger->debug("Joint {} pos {:.3f} pos cmd clipped from {:.3f} to max {:.3f}", i, _joint_state.pos[i],
-                           _output_joint_cmd.pos[i], _robot_config.joint_pos_max[i]);
-            _output_joint_cmd.pos[i] = _robot_config.joint_pos_max[i];
-        }
-    }
     // Gripper pos clipping
     if (_output_joint_cmd.gripper_pos < 0)
     {
