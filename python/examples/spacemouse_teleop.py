@@ -23,42 +23,34 @@ import time
 import click
 
 
-def smoothen_eef_traj(eef_traj, window_size):
-    eef_traj_smoothed = []
-    for i in range(len(eef_traj)):
-        if i < window_size:
-            eef_traj_smoothed.append(eef_traj[i])
-        else:
-            eef_cmd = EEFState()
-            eef_cmd.pose_6d()[:] = np.mean(
-                [eef_traj[j].pose_6d() for j in range(i - window_size, i)], axis=0
-            )
-            eef_cmd.gripper_pos = np.mean(
-                [eef_traj[j].gripper_pos for j in range(i - window_size, i)], axis=0
-            )
-            eef_cmd.timestamp = eef_traj[i].timestamp
-            eef_traj_smoothed.append(eef_cmd)
-    return eef_traj_smoothed
-
-
 def start_teleop_recording(controller: Arx5CartesianController):
 
     ori_speed = 1.5
     pos_speed = 0.8
     gripper_speed = 0.04
-    deadzone_threshold = 0.2
+    # For earlier spacemouse versions (wired version), the readout might be not zero even after it is released
+    # If you are using the wireless 3Dconnexion spacemouse, you can set the deadzone_threshold to 0.0 for better sensitivity
+    deadzone_threshold = 0.0
     target_pose_6d = controller.get_home_pose()
 
     target_gripper_pos = 0.0
 
     window_size = 3
     cmd_dt = 0.01
-    traj_length_s = 0.1  # Every 0.1s, the controller will send a new trajectory command
-    preview_time = 0.1
+    preview_time = 0.05  # Each trajectory command is 0.15s ahead of the current time
+
+    UPDATE_TRAJ = True
+    # False: only override single points with position control
+    # True: send a trajectory command every update_dt. Will include velocity. This is
 
     pose_x_min = target_pose_6d[0]
     spacemouse_queue = Queue(window_size)
     robot_config = controller.get_robot_config()
+
+    avg_error = np.zeros(6)
+    avg_cnt = 0
+    prev_eef_cmd = EEFState()
+    eef_cmd = EEFState()
 
     with SharedMemoryManager() as shm_manager:
         with Spacemouse(
@@ -94,9 +86,10 @@ def start_teleop_recording(controller: Arx5CartesianController):
                 if state.any() or button_left or button_right:
                     print(f"Start tracking!")
                     break
+                eef_cmd = controller.get_eef_cmd()
+                prev_eef_cmd = eef_cmd
             start_time = time.monotonic()
             loop_cnt = 0
-            eef_traj = []
             while True:
 
                 print(
@@ -108,12 +101,18 @@ def start_teleop_recording(controller: Arx5CartesianController):
                 button_left = sm.is_button_pressed(0)
                 button_right = sm.is_button_pressed(1)
                 if button_left and button_right:
+                    print(f"Avg 6D pose error: {avg_error / avg_cnt}")
+                    # Traj with vel Avg 6D pose error:      [ 0.0004  0.0002 -0.0016  0.0002  0.0032  0.0005]
+                    # Single point without vel:             [-0.0002 -0.0006 -0.0026  0.0027  0.0042 -0.0017]
+                    # Traj without vel Avg 6D pose error:   [ 0.0005  0.0008 -0.005  -0.0024  0.0073 -0.0001]
+
                     controller.reset_to_home()
                     config = controller.get_robot_config()
                     target_pose_6d = controller.get_home_pose()
                     target_gripper_pos = 0.0
                     loop_cnt = 0
                     start_time = time.monotonic()
+
                     continue
                 elif button_left and not button_right:
                     gripper_cmd = 1
@@ -133,27 +132,28 @@ def start_teleop_recording(controller: Arx5CartesianController):
                 while time.monotonic() < start_time + loop_cnt * cmd_dt:
                     pass
                 current_timestamp = controller.get_timestamp()
-                eef_cmd = EEFState()
+                prev_eef_cmd = eef_cmd
                 if target_pose_6d[0] < pose_x_min:
                     target_pose_6d[0] = pose_x_min
                 eef_cmd.pose_6d()[:] = target_pose_6d
                 eef_cmd.gripper_pos = target_gripper_pos
                 eef_cmd.timestamp = current_timestamp + preview_time
-                eef_traj.append(eef_cmd)
 
-                # # Send a trajectory command every traj_length_s
-                # if loop_cnt % int(traj_length_s / cmd_dt) == 0:
-                #     # eef_traj = smoothen_eef_traj(eef_traj, window_size=5)
-                #     controller.set_eef_traj(eef_traj)
-                #     eef_traj = eef_traj[-1:]  # Only keep the last element
+                if UPDATE_TRAJ:
+                    # This will calculate the velocity automatically
+                    controller.set_eef_traj([eef_cmd])
 
                 # Or sending single eef_cmd:
-                controller.set_eef_cmd(eef_cmd)
+                else:
+                    # Only position control
+                    controller.set_eef_cmd(eef_cmd)
 
                 output_eef_cmd = controller.get_eef_cmd()
                 eef_state = controller.get_eef_state()
+                avg_error += output_eef_cmd.pose_6d() - eef_state.pose_6d()
+                avg_cnt += 1
 
-                print(output_eef_cmd.pose_6d() - eef_state.pose_6d())
+                print(f"6DPose Error: {output_eef_cmd.pose_6d() - eef_state.pose_6d()}")
 
 
 @click.command()

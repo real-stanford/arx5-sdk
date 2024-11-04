@@ -26,6 +26,8 @@ class Arx5JointController : public Arx5ControllerBase
 
     void set_joint_cmd(JointState new_cmd);
 
+    void set_joint_traj(std::vector<JointState> new_traj);
+
     // Only works when background_send_recv is disabled
     void send_recv_once();
     void recv_once();
