@@ -58,11 +58,22 @@ void Arx5CartesianController::set_eef_cmd(EEFState new_cmd)
 
 void Arx5CartesianController::set_eef_traj(std::vector<EEFState> new_traj)
 {
+    double start_time = get_timestamp();
     std::vector<JointState> joint_traj;
+    double avg_window_s = 0.05;
+    joint_traj.push_back(_interpolator.interpolate(start_time - 2 * avg_window_s));
+    joint_traj.push_back(_interpolator.interpolate(start_time - avg_window_s));
+    joint_traj.push_back(_interpolator.interpolate(start_time));
+
+    double prev_timestamp = 0;
     for (auto eef_state : new_traj)
     {
+        if (eef_state.timestamp <= start_time)
+            continue;
         if (eef_state.timestamp == 0)
             throw std::invalid_argument("EEFState timestamp must be set for all waypoints");
+        if (eef_state.timestamp <= prev_timestamp)
+            throw std::invalid_argument("EEFState timestamps must be in ascending order");
         JointState current_joint_state = get_joint_state();
         std::tuple<int, VecDoF> ik_results;
         ik_results = multi_trial_ik(eef_state.pose_6d, current_joint_state.pos);
@@ -74,6 +85,7 @@ void Arx5CartesianController::set_eef_traj(std::vector<EEFState> new_traj)
         target_joint_state.timestamp = eef_state.timestamp;
 
         joint_traj.push_back(target_joint_state);
+        prev_timestamp = eef_state.timestamp;
 
         if (ik_status != 0)
         {
@@ -81,12 +93,20 @@ void Arx5CartesianController::set_eef_traj(std::vector<EEFState> new_traj)
         }
     }
 
+    double ik_end_time = get_timestamp();
+
     // Include velocity: first and last point based on current state, others based on neighboring points
-    calc_joint_vel(joint_traj);
+    calc_joint_vel(joint_traj, avg_window_s);
 
     double current_time = get_timestamp();
     std::lock_guard<std::mutex> guard(_cmd_mutex);
-    _interpolator.override_traj(get_timestamp(), joint_traj);
+
+    _interpolator.override_traj(current_time, joint_traj);
+
+    double end_override_traj_time = get_timestamp();
+    // _logger->debug("IK time: {:.3f}ms, calc vel time: {:.3f}ms, override_traj time: {:.3f}ms",
+    //                (ik_end_time - start_time) * 1000, (current_time - ik_end_time) * 1000,
+    //                (end_override_traj_time - ik_end_time) * 1000);
 }
 
 EEFState Arx5CartesianController::get_eef_cmd()

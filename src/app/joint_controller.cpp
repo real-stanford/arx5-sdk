@@ -37,6 +37,33 @@ void Arx5JointController::set_joint_cmd(JointState new_cmd)
         _interpolator.override_waypoint(get_timestamp(), new_cmd);
 }
 
+void Arx5JointController::set_joint_traj(std::vector<JointState> new_traj)
+{
+    double start_time = get_timestamp();
+    std::vector<JointState> joint_traj;
+    double avg_window_s = 0.05;
+    joint_traj.push_back(_interpolator.interpolate(start_time - 2 * avg_window_s));
+    joint_traj.push_back(_interpolator.interpolate(start_time - avg_window_s));
+    joint_traj.push_back(_interpolator.interpolate(start_time));
+
+    double prev_timestamp = 0;
+    for (auto joint_state : new_traj)
+    {
+        if (joint_state.timestamp <= start_time)
+            continue;
+        if (joint_state.timestamp == 0)
+            throw std::invalid_argument("JointState timestamp must be set for all waypoints");
+        if (joint_state.timestamp <= prev_timestamp)
+            throw std::invalid_argument("JointState timestamps must be in ascending order");
+        joint_traj.push_back(joint_state);
+        prev_timestamp = joint_state.timestamp;
+    }
+    calc_joint_vel(joint_traj, avg_window_s);
+
+    std::lock_guard<std::mutex> guard(_cmd_mutex);
+    _interpolator.override_traj(get_timestamp(), joint_traj);
+}
+
 void Arx5JointController::recv_once()
 {
     if (_background_send_recv_running)

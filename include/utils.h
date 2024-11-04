@@ -46,9 +46,10 @@ class JointStateInterpolator
     std::vector<JointState> _traj;
 };
 
-void calc_joint_vel(std::vector<JointState> &traj);
+void calc_joint_vel(std::vector<JointState> &traj, double avg_window_s = 0.05);
 // std::string vec2str(const Eigen::VectorXd& vec, int precision = 3);
 
+std::string joint_traj2str(const std::vector<JointState> &traj, int precision = 3);
 std::string state2str(const JointState &state, int precision = 3);
 
 } // namespace arx

@@ -387,21 +387,48 @@ std::string JointStateInterpolator::to_string()
     return str;
 }
 
-void calc_joint_vel(std::vector<JointState> &traj)
+void calc_joint_vel(std::vector<JointState> &traj, double avg_window_s)
 {
     if (traj.size() < 2)
     {
         return;
     }
+    int idx_0 = 0;
+    int idx_1 = 0;
+    int idx_2 = 0;
+    int idx_3 = 0;
     for (int i = 0; i < traj.size(); i++)
     {
-        int idx_0 = std::max(0, i - 2);
-        int idx_1 = std::max(0, i - 1);
-        int idx_2 = std::min((int)traj.size() - 1, i + 1);
-        int idx_3 = std::min((int)traj.size() - 1, i + 2);
+        while (idx_0 < traj.size() - 2 && traj[idx_0 + 1].timestamp < traj[i].timestamp - avg_window_s)
+        {
+            idx_0++;
+        }
+        while (idx_1 < traj.size() - 2 && traj[idx_1 + 1].timestamp < traj[i].timestamp - avg_window_s / 2)
+        {
+            idx_1++;
+        }
+        while (idx_2 < traj.size() - 1 && traj[idx_2].timestamp < traj[i].timestamp + avg_window_s / 2)
+        {
+            idx_2++;
+        }
+        while (idx_3 < traj.size() - 1 && traj[idx_3].timestamp < traj[i].timestamp + avg_window_s)
+        {
+            idx_3++;
+        }
+        assert(idx_0 <= idx_1 && idx_1 < idx_2 && idx_2 <= idx_3);
         traj[i].vel = (traj[idx_3].pos - traj[idx_0].pos) / (traj[idx_3].timestamp - traj[idx_0].timestamp) / 2 +
                       (traj[idx_2].pos - traj[idx_1].pos) / (traj[idx_2].timestamp - traj[idx_1].timestamp) / 2;
     }
+}
+
+std::string joint_traj2str(const std::vector<JointState> &traj, int precision)
+{
+    std::string str = "";
+    for (int i = 0; i < traj.size(); i++)
+    {
+        str += state2str(traj[i], precision);
+    }
+    return str;
 }
 
 std::string state2str(const JointState &state, int precision)
