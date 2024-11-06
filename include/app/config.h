@@ -23,8 +23,9 @@ class RobotConfig
 
     double gripper_vel_max; // m/s
     double gripper_torque_max;
-    double gripper_width;        // m, fully opened: GRIPPER_WIDTH, fully closed: 0
-    double gripper_open_readout; // fully-opened gripper motor readout
+    double gripper_width;        // m, fully opened: gripper_width, fully closed: 0
+    double gripper_open_readout; // fully-opened gripper motor readout. Should be calibrated using
+                                 // python/examples/calibrate.py
     int joint_dof;
     std::vector<int> motor_id;
     std::vector<MotorType> motor_type;
@@ -76,7 +77,12 @@ class RobotConfigFactory
         }
         else
         {
-            throw std::runtime_error("Unknown robot model. Currently available: X5, L5, X7Left, X7Right");
+            std::string available_models;
+            for (auto &config : configurations)
+            {
+                available_models += config.first + " ";
+            }
+            throw std::runtime_error("Unknown robot model. Currently available: " + available_models);
         }
     }
 
@@ -86,7 +92,7 @@ class RobotConfigFactory
         configurations["X5"] = std::make_shared<RobotConfig>(
             "X5",                                                          // robot_model
             (VecDoF(6) << -3.14, -0.05, -0.1, -1.6, -1.57, -2).finished(), // joint_pos_min
-            (VecDoF(6) << 2.618, 3.50, 3.10, 1.55, 1.57, 2).finished(),    // joint_pos_max
+            (VecDoF(6) << 2.618, 3.50, 3.20, 1.55, 1.57, 2).finished(),    // joint_pos_max
             (VecDoF(6) << 5.0, 5.0, 5.5, 5.5, 5.0, 5.0).finished(),        // joint_vel_max
             (VecDoF(6) << 30.0, 40.0, 30.0, 15.0, 10.0, 10.0).finished(),  // joint_torque_max
             (Pose6d() << 0.6, 0.6, 0.6, 1.8, 1.8, 1.8).finished(),         // ee_vel_max
@@ -105,10 +111,32 @@ class RobotConfigFactory
             "eef_link",                                                       // eef_link_name
             std::string(SDK_ROOT) + "/models/X5.urdf"                         // urdf_path
         );
+        configurations["X5_umi"] = std::make_shared<RobotConfig>(
+            "X5_umi",                                                      // robot_model
+            (VecDoF(6) << -3.14, -0.05, -0.1, -1.6, -1.57, -2).finished(), // joint_pos_min
+            (VecDoF(6) << 2.618, 3.50, 3.20, 1.55, 1.57, 2).finished(),    // joint_pos_max
+            (VecDoF(6) << 5.0, 5.0, 5.5, 5.5, 5.0, 5.0).finished(),        // joint_vel_max
+            (VecDoF(6) << 30.0, 40.0, 30.0, 15.0, 10.0, 10.0).finished(),  // joint_torque_max
+            (Pose6d() << 0.6, 0.6, 0.6, 1.8, 1.8, 1.8).finished(),         // ee_vel_max
+            0.3,                                                           // gripper_vel_max
+            1.5,                                                           // gripper_torque_max
+            0.086,                                                         // gripper_width
+            4.90,                                                          // gripper_open_readout
+            6,                                                             // joint_dof
+            std::vector<int>{1, 2, 4, 5, 6, 7},                            // motor_id
+            std::vector<MotorType>{MotorType::EC_A4310, MotorType::EC_A4310, MotorType::EC_A4310, MotorType::DM_J4310,
+                                   MotorType::DM_J4310, MotorType::DM_J4310}, // motor_type
+            8,                                                                // gripper_motor_id
+            MotorType::DM_J4310,                                              // gripper_motor_type
+            (Eigen::Vector3d() << 0, 0, -9.807).finished(),                   // gravity_vector
+            "base_link",                                                      // base_link_name
+            "eef_link",                                                       // eef_link_name
+            std::string(SDK_ROOT) + "/models/X5_umi.urdf"                     // urdf_path
+        );
         configurations["L5"] = std::make_shared<RobotConfig>(
             "L5",                                                          // robot_model
             (VecDoF(6) << -3.14, -0.05, -0.1, -1.6, -1.57, -2).finished(), // joint_pos_min
-            (VecDoF(6) << 2.618, 3.50, 3.10, 1.55, 1.57, 2).finished(),    // joint_pos_max
+            (VecDoF(6) << 2.618, 3.50, 3.20, 1.55, 1.57, 2).finished(),    // joint_pos_max
             (VecDoF(6) << 5.0, 5.0, 5.5, 5.5, 5.0, 5.0).finished(),        // joint_vel_max
             (VecDoF(6) << 30.0, 40.0, 30.0, 15.0, 10.0, 10.0).finished(),  // joint_torque_max
             (Pose6d() << 0.6, 0.6, 0.6, 1.8, 1.8, 1.8).finished(),         // ee_vel_max
@@ -127,8 +155,30 @@ class RobotConfigFactory
             "eef_link",                                                       // eef_link_name
             std::string(SDK_ROOT) + "/models/L5.urdf"                         // urdf_path
         );
-        configurations["X7Left"] = std::make_shared<RobotConfig>(
-            "X7Left",                                                                  // robot_model
+        configurations["L5_umi"] = std::make_shared<RobotConfig>(
+            "L5_umi",                                                      // robot_model
+            (VecDoF(6) << -3.14, -0.05, -0.1, -1.6, -1.57, -2).finished(), // joint_pos_min
+            (VecDoF(6) << 2.618, 3.50, 3.20, 1.55, 1.57, 2).finished(),    // joint_pos_max
+            (VecDoF(6) << 5.0, 5.0, 5.5, 5.5, 5.0, 5.0).finished(),        // joint_vel_max
+            (VecDoF(6) << 30.0, 40.0, 30.0, 15.0, 10.0, 10.0).finished(),  // joint_torque_max
+            (Pose6d() << 0.6, 0.6, 0.6, 1.8, 1.8, 1.8).finished(),         // ee_vel_max
+            0.3,                                                           // gripper_vel_max
+            1.5,                                                           // gripper_torque_max
+            0.086,                                                         // gripper_width
+            4.90,                                                          // gripper_open_readout
+            6,                                                             // joint_dof
+            std::vector<int>{1, 2, 4, 5, 6, 7},                            // motor_id
+            std::vector<MotorType>{MotorType::DM_J4340, MotorType::DM_J4340, MotorType::DM_J4340, MotorType::DM_J4310,
+                                   MotorType::DM_J4310, MotorType::DM_J4310}, // motor_type
+            8,                                                                // gripper_motor_id
+            MotorType::DM_J4310,                                              // gripper_motor_type
+            (Eigen::Vector3d() << 0, 0, -9.807).finished(),                   // gravity_vector
+            "base_link",                                                      // base_link_name
+            "eef_link",                                                       // eef_link_name
+            std::string(SDK_ROOT) + "/models/L5_umi.urdf"                     // urdf_path
+        );
+        configurations["X7_left"] = std::make_shared<RobotConfig>(
+            "X7_left",                                                                 // robot_model
             (VecDoF(7) << -2.09439, -1.5, -1.5, -1.5, -1.2, -0.3, -0.7854).finished(), // joint_pos_min
             (VecDoF(7) << 2.09439, 0.3, 1.5, 0.3, 1.2, 0.7854, 0.7854).finished(),     // joint_pos_max
             (VecDoF(7) << 3.0, 5.0, 5.0, 5.5, 5.5, 5.0, 5.0).finished(),               // joint_vel_max
@@ -149,8 +199,8 @@ class RobotConfigFactory
             "eef_link",                                                                            // eef_link_name
             std::string(SDK_ROOT) + "/models/X7_left.urdf"                                         // urdf_path
         );
-        configurations["X7Right"] = std::make_shared<RobotConfig>(
-            "X7Right",                                                                    // robot_model
+        configurations["X7_right"] = std::make_shared<RobotConfig>(
+            "X7_right",                                                                   // robot_model
             (VecDoF(7) << -2.09439, -0.3, -1.5, -0.3, -1.2, -0.7854, -0.7854).finished(), // joint_pos_min
             (VecDoF(7) << 2.09439, 1.5, 1.5, 1.5, 1.2, 0.3, 0.7854).finished(),           // joint_pos_max
             (VecDoF(7) << 3.0, 5.0, 5.0, 5.5, 5.5, 5.0, 5.0).finished(),                  // joint_vel_max
