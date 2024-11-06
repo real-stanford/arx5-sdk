@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<robot name="arx5_umi">
+<robot name="X5_umi">
     <link name="base_link">
         <inertial>
             <origin
@@ -18,7 +18,7 @@
         <visual>
             <origin xyz="0 0 0" rpy="0 0 0"/>
             <geometry>
-                <mesh filename="./meshes/base_link.STL"/>
+                <mesh filename="./meshes/X5/base_link.STL"/>
             </geometry>
             <material name="">
                 <color rgba="0.75294 0.75294 0.75294 1"/>
@@ -27,7 +27,7 @@
         <collision>
             <origin xyz="0 0 0" rpy="0 0 0"/>
             <geometry>
-                <mesh filename="./meshes/base_link.STL"/>
+                <mesh filename="./meshes/X5/base_link.STL"/>
             </geometry>
         </collision>
     </link>
@@ -40,7 +40,7 @@
         <visual>
             <origin xyz="0 0 0" rpy="0 0 0"/>
             <geometry>
-                <mesh filename="./meshes/link1.STL"/>
+                <mesh filename="./meshes/X5/link1.STL"/>
             </geometry>
             <material name="">
                 <color rgba="0.75294 0.75294 0.75294 1"/>
@@ -49,7 +49,7 @@
         <collision>
             <origin xyz="0 0 0" rpy="0 0 0"/>
             <geometry>
-                <mesh filename="./meshes/link1.STL"/>
+                <mesh filename="./meshes/X5/link1.STL"/>
             </geometry>
         </collision>
     </link>
@@ -74,7 +74,7 @@
         <visual>
             <origin xyz="0 0 0" rpy="0 0 0"/>
             <geometry>
-                <mesh filename="./meshes/link2.STL"/>
+                <mesh filename="./meshes/X5/link2.STL"/>
             </geometry>
             <material name="">
                 <color rgba="0.75294 0.75294 0.75294 1"/>
@@ -83,7 +83,7 @@
         <collision>
             <origin xyz="0 0 0" rpy="0 0 0"/>
             <geometry>
-                <mesh filename="./meshes/link2.STL"/>
+                <mesh filename="./meshes/X5/link2.STL"/>
             </geometry>
         </collision>
     </link>
@@ -108,7 +108,7 @@
         <visual>
             <origin xyz="0 0 0" rpy="0 0 0"/>
             <geometry>
-                <mesh filename="./meshes/link3.STL"/>
+                <mesh filename="./meshes/X5/link3.STL"/>
             </geometry>
             <material name="">
                 <color rgba="0.75294 0.75294 0.75294 1"/>
@@ -142,7 +142,7 @@
         <visual>
             <origin xyz="0 0 0" rpy="0 0 0"/>
             <geometry>
-                <mesh filename="./meshes/link4.STL"/>
+                <mesh filename="./meshes/X5/link4.STL"/>
             </geometry>
             <material name="">
                 <color rgba="0.89804 0.91765 0.92941 1"/>
@@ -179,7 +179,7 @@
         <visual>
             <origin xyz="0 0 0" rpy="0 0 0"/>
             <geometry>
-                <mesh filename="./meshes/link5.STL"/>
+                <mesh filename="./meshes/X5/link5.STL"/>
             </geometry>
             <material name="">
                 <color rgba="0.75294 0.75294 0.75294 1"/>
