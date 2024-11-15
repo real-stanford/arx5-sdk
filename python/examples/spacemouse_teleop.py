@@ -30,7 +30,7 @@ def start_teleop_recording(controller: Arx5CartesianController):
     gripper_speed = 0.04
     # For earlier spacemouse versions (wired version), the readout might be not zero even after it is released
     # If you are using the wireless 3Dconnexion spacemouse, you can set the deadzone_threshold to 0.0 for better sensitivity
-    deadzone_threshold = 0.0
+    deadzone_threshold = 0.1
     target_pose_6d = controller.get_home_pose()
 
     target_gripper_pos = 0.0
@@ -133,8 +133,8 @@ def start_teleop_recording(controller: Arx5CartesianController):
                     pass
                 current_timestamp = controller.get_timestamp()
                 prev_eef_cmd = eef_cmd
-                if target_pose_6d[0] < pose_x_min:
-                    target_pose_6d[0] = pose_x_min
+                # if target_pose_6d[0] < pose_x_min:
+                #     target_pose_6d[0] = pose_x_min
                 eef_cmd.pose_6d()[:] = target_pose_6d
                 eef_cmd.gripper_pos = target_gripper_pos
                 eef_cmd.timestamp = current_timestamp + preview_time
