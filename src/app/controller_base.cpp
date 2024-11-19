@@ -231,6 +231,7 @@ void Arx5ControllerBase::_init_robot()
         _recv();
         _check_joint_state_sanity();
         _over_current_protection();
+        // _logger->info("pos: {}", vec2str(_joint_state.pos));
     }
 
     Gain gain{_robot_config.joint_dof};
@@ -615,8 +616,11 @@ void Arx5ControllerBase::_recv()
         int start_send_motor_time_us = get_time_us();
         if (_robot_config.motor_type[i] == MotorType::EC_A4310)
         {
-            _logger->error("EC_A4310 motor type is not supported yet in _recv().");
-            // assert(false);
+            // _can_handle.query_EC_motor_pos(_robot_config.motor_id[i]);
+            // sleep_us(100);
+            // _can_handle.query_EC_motor_vel(_robot_config.motor_id[i]);
+            // sleep_us(100);
+            // _can_handle.query_EC_motor_current(_robot_config.motor_id[i]);
         }
         else if (_robot_config.motor_type[i] == MotorType::DM_J4310 ||
                  _robot_config.motor_type[i] == MotorType::DM_J4340 ||

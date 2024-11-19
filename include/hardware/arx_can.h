@@ -121,6 +121,9 @@ class ArxCan
     void can_cmd_init(uint16_t motor_id, uint8_t cmd);
 
     void send_EC_motor_cmd(uint16_t motor_id, float kp, float kd, float pos, float spd, float tor);
+    void query_EC_motor_pos(uint16_t motor_id);
+    void query_EC_motor_vel(uint16_t motor_id);
+    void query_EC_motor_current(uint16_t motor_id);
     void set_motor(uint16_t motor_id, uint8_t cmd);
 
     void send_DM_motor_cmd(uint16_t motor_id, float kp, float kd, float pos, float spd, float tor);
