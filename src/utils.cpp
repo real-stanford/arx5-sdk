@@ -8,8 +8,8 @@ namespace arx
 
 MovingAverageXd::MovingAverageXd(int dof, int window_size)
 {
-    _dof = dof;
-    _window_size = window_size;
+    dof_ = dof;
+    window_size_ = window_size;
     reset();
 }
 
@@ -19,18 +19,18 @@ MovingAverageXd::~MovingAverageXd()
 
 void MovingAverageXd::reset()
 {
-    _window_index = 0;
-    _window_sum = Eigen::VectorXd::Zero(_dof);
-    _window = Eigen::MatrixXd::Zero(_window_size, _dof);
+    window_index_ = 0;
+    window_sum_ = Eigen::VectorXd::Zero(dof_);
+    window_ = Eigen::MatrixXd::Zero(window_size_, dof_);
 }
 
 Eigen::VectorXd MovingAverageXd::filter(Eigen::VectorXd new_data)
 {
-    _window_sum -= _window.row(_window_index);
-    _window_sum += new_data;
-    _window.row(_window_index) = new_data;
-    _window_index = (_window_index + 1) % _window_size;
-    return _window_sum / _window_size;
+    window_sum_ -= window_.row(window_index_);
+    window_sum_ += new_data;
+    window_.row(window_index_) = new_data;
+    window_index_ = (window_index_ + 1) % window_size_;
+    return window_sum_ / window_size_;
 }
 
 // std::string vec2str(const Eigen::VectorXd& vec, int precision) {
@@ -54,10 +54,10 @@ JointStateInterpolator::JointStateInterpolator(int dof, std::string method)
         throw std::invalid_argument("Invalid interpolation method: " + method +
                                     ". Currently available: 'linear' or 'cubic'");
     }
-    _dof = dof;
-    _method = method;
-    _initialized = false;
-    _traj = std::vector<JointState>();
+    dof_ = dof;
+    method_ = method;
+    initialized_ = false;
+    traj_ = std::vector<JointState>();
 }
 
 void JointStateInterpolator::init(JointState start_state, JointState end_state)
@@ -70,35 +70,35 @@ void JointStateInterpolator::init(JointState start_state, JointState end_state)
     {
         throw std::invalid_argument("Start and end time are the same, plsease use init_fixed() instead");
     }
-    if (start_state.pos.size() != _dof || end_state.pos.size() != _dof)
+    if (start_state.pos.size() != dof_ || end_state.pos.size() != dof_)
     {
         throw std::invalid_argument("Joint state dimension mismatch");
     }
-    _traj.clear();
-    _traj.push_back(start_state);
-    _traj.push_back(end_state);
-    _initialized = true;
+    traj_.clear();
+    traj_.push_back(start_state);
+    traj_.push_back(end_state);
+    initialized_ = true;
 }
 
 void JointStateInterpolator::init_fixed(JointState start_state)
 {
-    if (start_state.pos.size() != _dof)
+    if (start_state.pos.size() != dof_)
     {
         throw std::invalid_argument("Joint state dimension mismatch");
     }
-    _traj.clear();
-    _traj.push_back(start_state);
-    _initialized = true;
+    traj_.clear();
+    traj_.push_back(start_state);
+    initialized_ = true;
 }
 
 void JointStateInterpolator::append_waypoint(double current_time, JointState end_state)
 {
-    if (!_initialized)
+    if (!initialized_)
     {
         throw std::runtime_error("Interpolator not initialized");
     }
 
-    if (end_state.pos.size() != _dof)
+    if (end_state.pos.size() != dof_)
     {
         throw std::invalid_argument("Joint state dimension mismatch");
     }
@@ -108,9 +108,9 @@ void JointStateInterpolator::append_waypoint(double current_time, JointState end
         throw std::invalid_argument("End time must be no less than current time");
     }
 
-    JointState current_state{_dof};
+    JointState current_state{dof_};
 
-    if (current_time < _traj[0].timestamp)
+    if (current_time < traj_[0].timestamp)
     {
         throw std::runtime_error("Current time must be no less than start time");
     }
@@ -119,38 +119,38 @@ void JointStateInterpolator::append_waypoint(double current_time, JointState end
         current_state = interpolate(current_time);
     }
 
-    std::vector<JointState> prev_traj = _traj;
-    _traj.clear();
-    _traj.push_back(current_state);
+    std::vector<JointState> prev_traj = traj_;
+    traj_.clear();
+    traj_.push_back(current_state);
     for (int i = 0; i < prev_traj.size(); i++)
     {
         if (prev_traj[i].timestamp > current_time)
         {
             if (prev_traj[i].timestamp > end_state.timestamp)
             {
-                _traj.push_back(end_state);
+                traj_.push_back(end_state);
                 break;
             }
             else
             {
-                _traj.push_back(prev_traj[i]);
+                traj_.push_back(prev_traj[i]);
             }
         }
         if (i == prev_traj.size() - 1)
         {
-            _traj.push_back(end_state);
+            traj_.push_back(end_state);
         }
     }
 }
 
 void JointStateInterpolator::override_waypoint(double current_time, JointState end_state)
 {
-    if (!_initialized)
+    if (!initialized_)
     {
         throw std::runtime_error("Interpolator not initialized");
     }
 
-    if (end_state.pos.size() != _dof)
+    if (end_state.pos.size() != dof_)
     {
         throw std::invalid_argument("Joint state dimension mismatch");
     }
@@ -160,9 +160,9 @@ void JointStateInterpolator::override_waypoint(double current_time, JointState e
         throw std::invalid_argument("End time must be no less than current time");
     }
 
-    JointState current_state{_dof};
+    JointState current_state{dof_};
 
-    if (current_time < _traj[0].timestamp)
+    if (current_time < traj_[0].timestamp)
     {
         throw std::runtime_error("Current time must be no less than start time");
     }
@@ -171,15 +171,15 @@ void JointStateInterpolator::override_waypoint(double current_time, JointState e
         current_state = interpolate(current_time);
     }
 
-    std::vector<JointState> prev_traj = _traj;
-    _traj.clear();
-    _traj.push_back(current_state);
-    _traj.push_back(end_state);
+    std::vector<JointState> prev_traj = traj_;
+    traj_.clear();
+    traj_.push_back(current_state);
+    traj_.push_back(end_state);
 }
 
 void JointStateInterpolator::append_traj(double current_time, std::vector<JointState> traj)
 {
-    if (!_initialized)
+    if (!initialized_)
     {
         throw std::runtime_error("Interpolator not initialized");
     }
@@ -202,14 +202,14 @@ void JointStateInterpolator::append_traj(double current_time, std::vector<JointS
         {
             throw std::invalid_argument("Trajectory timestamps must be in strictly ascending order");
         }
-        if (traj[i].pos.size() != _dof || traj[i + 1].pos.size() != _dof)
+        if (traj[i].pos.size() != dof_ || traj[i + 1].pos.size() != dof_)
         {
             throw std::invalid_argument("Joint state dimension mismatch");
         }
     }
 
-    JointState current_state{_dof};
-    if (current_time < _traj[0].timestamp)
+    JointState current_state{dof_};
+    if (current_time < traj_[0].timestamp)
     {
         throw std::runtime_error("Current time must be no less than start time");
     }
@@ -218,9 +218,9 @@ void JointStateInterpolator::append_traj(double current_time, std::vector<JointS
         current_state = interpolate(current_time);
     }
 
-    std::vector<JointState> prev_traj = _traj;
-    _traj.clear();
-    _traj.push_back(current_state);
+    std::vector<JointState> prev_traj = traj_;
+    traj_.clear();
+    traj_.push_back(current_state);
     double new_traj_start_time = traj[0].timestamp;
     // Merge prev_traj before new_traj
 
@@ -228,13 +228,13 @@ void JointStateInterpolator::append_traj(double current_time, std::vector<JointS
     {
         if (prev_traj[0].timestamp > current_time)
         {
-            _traj.push_back(prev_traj[0]);
+            traj_.push_back(prev_traj[0]);
         }
         prev_traj.erase(prev_traj.begin());
     }
     while (traj.size() > 0)
     {
-        _traj.push_back(traj[0]);
+        traj_.push_back(traj[0]);
         traj.erase(traj.begin());
     }
 }
@@ -242,7 +242,7 @@ void JointStateInterpolator::append_traj(double current_time, std::vector<JointS
 void JointStateInterpolator::override_traj(double current_time, std::vector<JointState> traj)
 {
 
-    if (!_initialized)
+    if (!initialized_)
     {
         throw std::runtime_error("Interpolator not initialized");
     }
@@ -265,14 +265,14 @@ void JointStateInterpolator::override_traj(double current_time, std::vector<Join
         {
             throw std::invalid_argument("Trajectory timestamps must be in strictly ascending order");
         }
-        if (traj[i].pos.size() != _dof || traj[i + 1].pos.size() != _dof)
+        if (traj[i].pos.size() != dof_ || traj[i + 1].pos.size() != dof_)
         {
             throw std::invalid_argument("Joint state dimension mismatch");
         }
     }
 
-    JointState current_state{_dof};
-    if (current_time < _traj[0].timestamp)
+    JointState current_state{dof_};
+    if (current_time < traj_[0].timestamp)
     {
         throw std::runtime_error("Current time must be no less than start time");
     }
@@ -281,13 +281,13 @@ void JointStateInterpolator::override_traj(double current_time, std::vector<Join
         current_state = interpolate(current_time);
     }
 
-    std::vector<JointState> prev_traj = _traj;
-    _traj.clear();
-    _traj.push_back(current_state);
+    std::vector<JointState> prev_traj = traj_;
+    traj_.clear();
+    traj_.push_back(current_state);
 
     while (traj.size() > 0)
     {
-        _traj.push_back(traj[0]);
+        traj_.push_back(traj[0]);
         traj.erase(traj.begin());
     }
 }
@@ -295,7 +295,7 @@ void JointStateInterpolator::override_traj(double current_time, std::vector<Join
 JointState JointStateInterpolator::interpolate(double time)
 {
 
-    if (!_initialized)
+    if (!initialized_)
     {
         throw std::runtime_error("Interpolator not initialized");
     }
@@ -304,44 +304,44 @@ JointState JointStateInterpolator::interpolate(double time)
         throw std::invalid_argument("Interpolate time must be greater than 0");
     }
 
-    if (_traj.size() == 0)
+    if (traj_.size() == 0)
     {
         throw std::runtime_error("Empty trajectory");
     }
-    if (_traj.size() == 1)
+    if (traj_.size() == 1)
     {
-        JointState interp_state = _traj[0];
+        JointState interp_state = traj_[0];
         interp_state.timestamp = time;
         return interp_state;
     }
 
-    if (time <= _traj[0].timestamp)
+    if (time <= traj_[0].timestamp)
     {
-        JointState interp_state = _traj[0];
+        JointState interp_state = traj_[0];
         interp_state.timestamp = time;
         return interp_state;
     }
-    else if (time >= _traj.back().timestamp)
+    else if (time >= traj_.back().timestamp)
     {
-        JointState interp_state = _traj.back();
+        JointState interp_state = traj_.back();
         interp_state.timestamp = time;
         return interp_state;
     }
 
-    for (int i = 0; i <= _traj.size() - 2; i++)
+    for (int i = 0; i <= traj_.size() - 2; i++)
     {
-        JointState start_state = _traj[i];
-        JointState end_state = _traj[i + 1];
+        JointState start_state = traj_[i];
+        JointState end_state = traj_[i + 1];
         if (time >= start_state.timestamp && time <= end_state.timestamp)
         {
-            if (_method == "linear")
+            if (method_ == "linear")
             {
                 JointState interp_result = start_state + (end_state - start_state) * (time - start_state.timestamp) /
                                                              (end_state.timestamp - start_state.timestamp);
                 interp_result.timestamp = time;
                 return interp_result;
             }
-            else if (_method == "cubic")
+            else if (method_ == "cubic")
             {
                 // Torque and gripper pos will still be linearly interpolated
                 JointState interp_result = start_state + (end_state - start_state) * (time - start_state.timestamp) /
@@ -368,7 +368,7 @@ JointState JointStateInterpolator::interpolate(double time)
                 return interp_result;
             }
         }
-        if (i == _traj.size() - 2)
+        if (i == traj_.size() - 2)
         {
             throw std::runtime_error("Interpolation failed");
         }
@@ -377,11 +377,11 @@ JointState JointStateInterpolator::interpolate(double time)
 
 std::string JointStateInterpolator::to_string()
 {
-    std::string str = "JointStateInterpolator DOF: " + std::to_string(_dof) + " Method: " + _method +
-                      " Length: " + std::to_string(_traj.size()) + "\n";
-    for (int i = 0; i < _traj.size(); i++)
+    std::string str = "JointStateInterpolator DOF: " + std::to_string(dof_) + " Method: " + method_ +
+                      " Length: " + std::to_string(traj_.size()) + "\n";
+    for (int i = 0; i < traj_.size(); i++)
     {
-        str += state2str(_traj[i]);
+        str += state2str(traj_[i]);
     }
 
     return str;
@@ -445,7 +445,7 @@ std::string state2str(const JointState &state, int precision)
 
 bool JointStateInterpolator::is_initialized()
 {
-    return _initialized;
+    return initialized_;
 }
 } // namespace arx
 
