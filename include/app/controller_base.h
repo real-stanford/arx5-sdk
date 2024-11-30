@@ -37,39 +37,39 @@ class Arx5ControllerBase // parent class for the other two controllers
     void set_to_damping();
 
   protected:
-    RobotConfig _robot_config;
-    ControllerConfig _controller_config;
+    RobotConfig robot_config_;
+    ControllerConfig controller_config_;
 
-    int _over_current_cnt = 0;
-    JointState _output_joint_cmd{_robot_config.joint_dof};
+    int over_current_cnt_ = 0;
+    JointState output_joint_cmd_{robot_config_.joint_dof};
 
-    JointState _joint_state{_robot_config.joint_dof};
-    Gain _gain{_robot_config.joint_dof};
-    // bool _prev_gripper_updated = false; // Declaring here leads to segfault
+    JointState joint_state_{robot_config_.joint_dof};
+    Gain gain_{robot_config_.joint_dof};
+    // bool prev_gripper_updated_ = false; // Declaring here leads to segfault
 
-    ArxCan _can_handle;
-    std::shared_ptr<spdlog::logger> _logger;
-    std::thread _background_send_recv_thread;
+    ArxCan can_handle_;
+    std::shared_ptr<spdlog::logger> logger_;
+    std::thread background_send_recv_thread_;
 
-    bool _prev_gripper_updated = false; // To suppress the warning message
-    bool _background_send_recv_running = false;
-    bool _destroy_background_threads = false;
+    bool prev_gripper_updated_ = false; // To suppress the warning message
+    bool background_send_recv_running_ = false;
+    bool destroy_background_threads_ = false;
 
-    std::mutex _cmd_mutex;
-    std::mutex _state_mutex;
+    std::mutex cmd_mutex_;
+    std::mutex state_mutex_;
 
-    long int _start_time_us;
-    std::shared_ptr<Arx5Solver> _solver;
-    JointStateInterpolator _interpolator{_robot_config.joint_dof, _controller_config.interpolation_method};
-    void _init_robot();
-    void _update_joint_state();
-    void _update_output_cmd();
-    void _send_recv();
-    void _recv();
-    void _check_joint_state_sanity();
-    void _over_current_protection();
-    void _background_send_recv();
-    void _enter_emergency_state();
+    long int start_time_us_;
+    std::shared_ptr<Arx5Solver> solver_;
+    JointStateInterpolator interpolator_{robot_config_.joint_dof, controller_config_.interpolation_method};
+    void init_robot_();
+    void update_joint_state_();
+    void update_output_cmd_();
+    void send_recv_();
+    void recv_();
+    void check_joint_state_sanity_();
+    void over_current_protection_();
+    void background_send_recv_();
+    void enter_emergency_state_();
 };
 } // namespace arx
 

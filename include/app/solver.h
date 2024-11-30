@@ -55,15 +55,15 @@ class Arx5Solver
 
   private:
     // parameters for ik solver
-    const double _EPS = 1E-4;
-    const int _MAXITER = 50;
-    const double _EPS_JOINTS = 1E-10;
-    const int _JOINT_DOF;
+    const double EPS_ = 1E-4;
+    const int MAXITER_ = 50;
+    const double EPS_JOINTS_ = 1E-10;
+    const int JOINT_DOF_;
 
-    const Eigen::VectorXd _JOINT_POS_MIN;
-    const Eigen::VectorXd _JOINT_POS_MAX;
+    const Eigen::VectorXd JOINT_POS_MIN_;
+    const Eigen::VectorXd JOINT_POS_MAX_;
 
-    const std::unordered_map<int, std::string> _IK_STATUS_MAP = {
+    const std::unordered_map<int, std::string> IK_STATUS_MAP_ = {
         {KDL::SolverI::E_DEGRADED, "E_DEGRADED"},
         {KDL::SolverI::E_NOERROR, "E_NOERROR"},
         {KDL::SolverI::E_NO_CONVERGE, "E_NO_CONVERGE"},
@@ -77,13 +77,13 @@ class Arx5Solver
         {E_EXCEED_JOITN_LIMIT, "E_EXCEED_JOITN_LIMIT"}};
 
     // These variables should be class members and will be used when solvers are called.
-    KDL::Tree _tree;
-    KDL::Chain _chain;
-    KDL::Chain _chain_without_fixed_joints;
+    KDL::Tree tree_;
+    KDL::Chain chain_;
+    KDL::Chain chain_without_fixed_joints_;
 
-    std::shared_ptr<KDL::ChainIkSolverPos_LMA> _ik_solver;
-    std::shared_ptr<KDL::ChainFkSolverPos_recursive> _fk_solver;
-    std::shared_ptr<KDL::ChainIdSolver_RNE> _id_solver;
+    std::shared_ptr<KDL::ChainIkSolverPos_LMA> ik_solver_;
+    std::shared_ptr<KDL::ChainFkSolverPos_recursive> fk_solver_;
+    std::shared_ptr<KDL::ChainIdSolver_RNE> id_solver_;
 };
 } // namespace arx
 

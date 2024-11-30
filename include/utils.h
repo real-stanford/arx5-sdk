@@ -17,11 +17,11 @@ class MovingAverageXd
     Eigen::VectorXd filter(Eigen::VectorXd new_data);
 
   private:
-    int _dof;
-    int _window_size;
-    int _window_index;
-    Eigen::VectorXd _window_sum;
-    Eigen::MatrixXd _window;
+    int dof_;
+    int window_size_;
+    int window_index_;
+    Eigen::VectorXd window_sum_;
+    Eigen::MatrixXd window_;
 };
 
 class JointStateInterpolator
@@ -40,10 +40,10 @@ class JointStateInterpolator
     bool is_initialized();
 
   private:
-    int _dof;
-    bool _initialized = false;
-    std::string _method;
-    std::vector<JointState> _traj;
+    int dof_;
+    bool initialized_ = false;
+    std::string method_;
+    std::vector<JointState> traj_;
 };
 
 void calc_joint_vel(std::vector<JointState> &traj, double avg_window_s = 0.05);
