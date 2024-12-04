@@ -5,7 +5,7 @@
 
 using namespace arx;
 
-Arx5CartesianController *arx5_cartesian_controller = new Arx5CartesianController("X5", "can0", "../models/arx5.urdf");
+Arx5CartesianController *arx5_cartesian_controller = new Arx5CartesianController("L5", "can0");
 
 void signal_handler(int signal)
 {
@@ -18,14 +18,18 @@ int main()
 {
     EEFState cmd;
     int loop_cnt = 0;
-    int dof = arx5_cartesian_controller->get_robot_config().joint_dof;
+    RobotConfig robot_config = arx5_cartesian_controller->get_robot_config();
+    int dof = robot_config.joint_dof;
     Gain gain{dof};
-    Arx5Solver solver("../models/arx5.urdf", dof);
+    Arx5Solver solver("../models/arx5.urdf", dof, robot_config.joint_pos_min, robot_config.joint_pos_max);
     arx5_cartesian_controller->reset_to_home();
+    arx5_cartesian_controller->set_log_level(spdlog::level::debug);
     gain.kd = (arx5_cartesian_controller->get_controller_config()).default_kd / 10;
     std::signal(SIGINT, signal_handler);
     arx5_cartesian_controller->set_gain(gain);
+    double current_time = arx5_cartesian_controller->get_timestamp();
     cmd.pose_6d = arx5_cartesian_controller->get_home_pose();
+    cmd.timestamp = current_time + 0.1;
     arx5_cartesian_controller->set_eef_cmd(cmd);
     while (true)
     {
@@ -37,7 +41,7 @@ int main()
         // eef_state.gripper_pos); printf("raw joint pos: %.2f, %.2f, %.2f, %.2f, %.2f, %.2f\n",
         //        joint_state.pos[0], joint_state.pos[1], joint_state.pos[2],
         //        joint_state.pos[3], joint_state.pos[4], joint_state.pos[5]);
-        std::tuple<bool, VecDoF> result = solver.inverse_kinematics(eef_state.pose_6d, joint_state.pos);
+        std::tuple<int, VecDoF> result = solver.inverse_kinematics(eef_state.pose_6d, joint_state.pos);
         if (std::get<0>(result))
         {
             VecDoF ik_joint_pos = std::get<1>(result);

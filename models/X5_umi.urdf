@@ -1,8 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- This URDF was automatically created by SolidWorks to URDF Exporter! Originally created by Stephen Brawner (brawner@gmail.com) 
-     Commit Version: 1.6.0-4-g7f85cfe  Build Version: 1.6.7995.38578
-     For more information, please see http://wiki.ros.org/sw_urdf_exporter -->
-<robot name="ultron_v1.1_aa">
+<robot name="X5_umi">
     <link name="base_link">
         <inertial>
             <origin
@@ -21,7 +18,7 @@
         <visual>
             <origin xyz="0 0 0" rpy="0 0 0"/>
             <geometry>
-                <mesh filename="./meshes/base_link.STL"/>
+                <mesh filename="./meshes/X5/base_link.STL"/>
             </geometry>
             <material name="">
                 <color rgba="0.75294 0.75294 0.75294 1"/>
@@ -30,7 +27,7 @@
         <collision>
             <origin xyz="0 0 0" rpy="0 0 0"/>
             <geometry>
-                <mesh filename="./meshes/base_link.STL"/>
+                <mesh filename="./meshes/X5/base_link.STL"/>
             </geometry>
         </collision>
     </link>
@@ -43,7 +40,7 @@
         <visual>
             <origin xyz="0 0 0" rpy="0 0 0"/>
             <geometry>
-                <mesh filename="./meshes/link1.STL"/>
+                <mesh filename="./meshes/X5/link1.STL"/>
             </geometry>
             <material name="">
                 <color rgba="0.75294 0.75294 0.75294 1"/>
@@ -52,7 +49,7 @@
         <collision>
             <origin xyz="0 0 0" rpy="0 0 0"/>
             <geometry>
-                <mesh filename="./meshes/link1.STL"/>
+                <mesh filename="./meshes/X5/link1.STL"/>
             </geometry>
         </collision>
     </link>
@@ -77,7 +74,7 @@
         <visual>
             <origin xyz="0 0 0" rpy="0 0 0"/>
             <geometry>
-                <mesh filename="./meshes/link2.STL"/>
+                <mesh filename="./meshes/X5/link2.STL"/>
             </geometry>
             <material name="">
                 <color rgba="0.75294 0.75294 0.75294 1"/>
@@ -86,7 +83,7 @@
         <collision>
             <origin xyz="0 0 0" rpy="0 0 0"/>
             <geometry>
-                <mesh filename="./meshes/link2.STL"/>
+                <mesh filename="./meshes/X5/link2.STL"/>
             </geometry>
         </collision>
     </link>
@@ -111,7 +108,7 @@
         <visual>
             <origin xyz="0 0 0" rpy="0 0 0"/>
             <geometry>
-                <mesh filename="./meshes/link3.STL"/>
+                <mesh filename="./meshes/X5/link3.STL"/>
             </geometry>
             <material name="">
                 <color rgba="0.75294 0.75294 0.75294 1"/>
@@ -145,7 +142,7 @@
         <visual>
             <origin xyz="0 0 0" rpy="0 0 0"/>
             <geometry>
-                <mesh filename="./meshes/link4.STL"/>
+                <mesh filename="./meshes/X5/link4.STL"/>
             </geometry>
             <material name="">
                 <color rgba="0.89804 0.91765 0.92941 1"/>
@@ -182,7 +179,7 @@
         <visual>
             <origin xyz="0 0 0" rpy="0 0 0"/>
             <geometry>
-                <mesh filename="./meshes/link5.STL"/>
+                <mesh filename="./meshes/X5/link5.STL"/>
             </geometry>
             <material name="">
                 <color rgba="0.75294 0.75294 0.75294 1"/>
@@ -206,14 +203,19 @@
     </joint>
     <link name="link6">
         <inertial>
-            <origin xyz="0.05 0 0" rpy="0 0 0"/>
-            <mass value="0.581000"/>
-            <inertia ixx="0.00029" ixy="0.00000" ixz="0.00000" iyy="0.00028" iyz="-0.00001" izz="0.00045"/>
+            <origin xyz="0.05435277 -0.00734005 0.01881196" rpy="0 0 0"/>
+            <mass value="0.902"/>
+            <inertia ixx="0.00229822"
+                ixy="1.254e-4"
+                ixz="-0.00037442"
+                iyy="0.00596005"
+                iyz="0.00054471"
+                izz="0.00530799"/>
         </inertial>
         <visual>
             <origin xyz="0 0 0" rpy="0 0 0"/>
             <geometry>
-                <mesh filename="./meshes/link6.STL"/>
+                <mesh filename="./meshes/arx_gopro_finray_gripper.stl"/>
             </geometry>
             <material name="">
                 <color rgba="0.89804 0.91765 0.92941 1"/>
@@ -222,7 +224,7 @@
         <collision>
             <origin xyz="0 0 0" rpy="0 0 0"/>
             <geometry>
-                <mesh filename="./meshes/link6.STL"/>
+                <mesh filename="./meshes/arx_gopro_finray_gripper.stl"/>
             </geometry>
         </collision>
     </link>
@@ -231,20 +233,35 @@
         <parent link="link5"/>
         <child link="link6"/>
         <axis xyz="1 0 0"/>
-        <limit lower="-1.57" upper="1.57" effort="100" velocity="1000"/>
+        <limit lower="-1.57" upper="1.57" effort="30"
+            velocity="10"/>
     </joint>
 
     <link name="eef_link">
     <inertial>
-        <mass value="0.0"/>
+        <mass value="0.0001"/>
         <origin xyz="0.0 0.0 0.0"  rpy="0 0 0"/>
-        <inertia ixx="0.0" ixy="0.0" ixz="0.0" iyy="0.0" iyz="0.0" izz="0.0"/>
+        <inertia ixx="0.001" ixy="0.001" ixz="0.001" iyy="0.001" iyz="0.001" izz="0.001"/>
     </inertial>
     </link>
 
     <joint name="gripper_fixed_joint" type="fixed">
-        <origin xyz="0.145 0.0 0.0" rpy="0 0 0"/>
+        <origin xyz="0.225 0.0 0.0" rpy="0 0 0"/>
         <parent link="link6"/>
         <child link="eef_link"/>
     </joint>
+
+    <!-- <link name="gopro">
+        <inertial>
+            <origin xyz="0 0 0"  rpy="0 0 0"/>
+            <mass value="0.4"/>
+            <inertia ixx="0.00026" ixy="0.0" ixz="0.0" iyy="0.00012" iyz="0.0" izz="0.0002"/>
+        </inertial>
+    </link>
+
+    <joint name="gopro_fixed_joint" type="fixed">
+        <origin xyz="0.02 -0.02 0.08" rpy="0 0 0"/>
+        <parent link="link6"/>
+        <child link="gopro"/>
+    </joint> -->
 </robot>

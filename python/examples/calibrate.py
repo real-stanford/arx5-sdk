@@ -16,13 +16,13 @@ def calibrate_joint(model: str, interface: str, joint_id: int):
     joint_controller = arx5.Arx5JointController(model, interface)
     gain = arx5.Gain(joint_controller.get_robot_config().joint_dof)
     joint_controller.set_gain(gain)
-    joint_controller.enable_background_send_recv()
     joint_controller.calibrate_joint(joint_id)
     while True:
-        state = joint_controller.get_state()
+        state = joint_controller.get_joint_state()
         pos = state.pos()
         print(", ".join([f"{x:.3f}" for x in pos]))
         time.sleep(0.1)
+
 
 @click.command()
 @click.argument("model")  # ARX arm model: X5 or L5

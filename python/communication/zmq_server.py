@@ -31,15 +31,11 @@ class Arx5Server:
         zmq_port: int,
         model: str,
         interface: str,
-        urdf_path: str,
         no_cmd_timeout: float = 60.0,
     ):
         self.model = model
         self.interface = interface
-        self.urdf_path = urdf_path
-        self.arx5_cartesian_controller = arx5.Arx5CartesianController(
-            model, interface, urdf_path
-        )
+        self.arx5_cartesian_controller = arx5.Arx5CartesianController(model, interface)
         print(f"Arx5Server is initialized with {model} on {interface}")
         self.context = zmq.Context()
         self.socket = self.context.socket(zmq.REP)
@@ -63,7 +59,7 @@ class Arx5Server:
                     if self.arx5_cartesian_controller is None:
                         print(f"Reestablishing high level controller")
                         self.arx5_cartesian_controller = arx5.Arx5CartesianController(
-                            self.model, self.interface, self.urdf_path
+                            self.model, self.interface
                         )
                 else:
 
@@ -94,7 +90,11 @@ class Arx5Server:
                     continue
                 if msg["cmd"] == "GET_STATE":
                     # print(f"Received GET_STATE message")
+                    eef_pose_cmd = self.arx5_cartesian_controller.get_eef_cmd()
                     eef_state = self.arx5_cartesian_controller.get_eef_state()
+
+                    print(f"{eef_pose_cmd}")
+                    print(f"{eef_state.pose_6d()}")
                     low_state = self.arx5_cartesian_controller.get_joint_state()
                     reply_msg = {
                         "cmd": "GET_STATE",
@@ -226,12 +226,10 @@ class Arx5Server:
 @click.command()
 @click.argument("model")  # ARX arm model: X5 or L5
 @click.argument("interface")  # can bus name (can0 etc.)
-@click.option("--urdf_path", "-u", default="../models/arx5.urdf", help="URDF file path")
-def main(model: str, interface: str, urdf_path: str):
+def main(model: str, interface: str):
     server = Arx5Server(
         model=model,
         interface=interface,
-        urdf_path=urdf_path,
         zmq_ip="0.0.0.0",
         zmq_port=8765,
     )

@@ -6,12 +6,16 @@
                 "${workspaceFolder}/**",
                 "${workspaceFolder}/include",
                 "${HOME}/miniforge3/envs/arx-py310/include",
+                "${HOME}/miniforge3/envs/arx-py310/include/eigen3",
+                "${HOME}/miniforge3/envs/arx-py310/include/python3.10",
+                "${HOME}/miniforge3/envs/arx-py310/include/kdl_parser",
             ],
             "defines": [],
             "compilerPath": "/usr/bin/gcc",
             "cStandard": "c17",
             "cppStandard": "gnu++17",
-            "intelliSenseMode": "linux-gcc-arm64"
+            "intelliSenseMode": "linux-gcc-arm64",
+            "compileCommands": "${workspaceFolder}/build/compile_commands.json"
         }
     ],
     "version": 4

@@ -1,6 +1,7 @@
 #include "app/cartesian_controller.h"
 #include "app/common.h"
 #include "app/config.h"
+#include "app/controller_base.h"
 #include "app/joint_controller.h"
 #include "hardware/arx_can.h"
 #include "spdlog/spdlog.h"
@@ -58,13 +59,13 @@ PYBIND11_MODULE(arx5_interface, m)
         .def(py::init<const std::string &, const std::string &>())
         .def(py::init<RobotConfig, ControllerConfig, const std::string &>())
         .def("send_recv_once", &Arx5JointController::send_recv_once)
-        .def("enable_background_send_recv", &Arx5JointController::enable_background_send_recv)
-        .def("disable_background_send_recv", &Arx5JointController::disable_background_send_recv)
-        .def("enable_gravity_compensation", &Arx5JointController::enable_gravity_compensation)
-        .def("disable_gravity_compensation", &Arx5JointController::disable_gravity_compensation)
-        .def("get_state", &Arx5JointController::get_state)
+        .def("recv_once", &Arx5JointController::recv_once)
+        .def("get_joint_state", &Arx5JointController::get_joint_state)
         .def("get_timestamp", &Arx5JointController::get_timestamp)
         .def("set_joint_cmd", &Arx5JointController::set_joint_cmd)
+        .def("set_joint_traj", &Arx5JointController::set_joint_traj)
+        .def("get_home_pose", &Arx5JointController::get_home_pose)
+        .def("get_eef_state", &Arx5JointController::get_eef_state)
         .def("get_joint_cmd", &Arx5JointController::get_joint_cmd)
         .def("set_gain", &Arx5JointController::set_gain)
         .def("get_gain", &Arx5JointController::get_gain)
@@ -76,11 +77,12 @@ PYBIND11_MODULE(arx5_interface, m)
         .def("calibrate_joint", &Arx5JointController::calibrate_joint)
         .def("calibrate_gripper", &Arx5JointController::calibrate_gripper);
     py::class_<Arx5CartesianController>(m, "Arx5CartesianController")
-        .def(py::init<const std::string &, const std::string &, const std::string &>())
-        .def(py::init<RobotConfig, ControllerConfig, const std::string &, const std::string &>())
+        .def(py::init<const std::string &, const std::string &>())
+        .def(py::init<RobotConfig, ControllerConfig, const std::string &>())
         .def("set_eef_cmd", &Arx5CartesianController::set_eef_cmd)
-        .def("get_eef_cmd", &Arx5CartesianController::get_eef_cmd)
+        .def("set_eef_traj", &Arx5CartesianController::set_eef_traj)
         .def("get_joint_cmd", &Arx5CartesianController::get_joint_cmd)
+        .def("get_eef_cmd", &Arx5CartesianController::get_eef_cmd)
         .def("get_eef_state", &Arx5CartesianController::get_eef_state)
         .def("get_joint_state", &Arx5CartesianController::get_joint_state)
         .def("get_timestamp", &Arx5CartesianController::get_timestamp)
@@ -91,13 +93,17 @@ PYBIND11_MODULE(arx5_interface, m)
         .def("get_robot_config", &Arx5CartesianController::get_robot_config)
         .def("get_controller_config", &Arx5CartesianController::get_controller_config)
         .def("reset_to_home", &Arx5CartesianController::reset_to_home)
+        .def("multi_trial_ik", &Arx5CartesianController::multi_trial_ik)
         .def("set_to_damping", &Arx5CartesianController::set_to_damping);
     py::class_<Arx5Solver>(m, "Arx5Solver")
-        .def(py::init<const std::string &, int>())
-        .def(py::init<const std::string &, int, const std::string &, const std::string &, Eigen::Vector3d>())
+        .def(py::init<const std::string &, int, Eigen::VectorXd, Eigen::VectorXd>())
+        .def(py::init<const std::string &, int, Eigen::VectorXd, Eigen::VectorXd, const std::string &,
+                      const std::string &, Eigen::Vector3d>())
         .def("inverse_dynamics", &Arx5Solver::inverse_dynamics)
         .def("forward_kinematics", &Arx5Solver::forward_kinematics)
-        .def("inverse_kinematics", &Arx5Solver::inverse_kinematics);
+        .def("inverse_kinematics", &Arx5Solver::inverse_kinematics)
+        .def("get_ik_status_name", &Arx5Solver::get_ik_status_name)
+        .def("multi_trial_ik", &Arx5Solver::multi_trial_ik);
     py::class_<RobotConfig>(m, "RobotConfig")
         .def_readwrite("robot_model", &RobotConfig::robot_model)
         .def_readwrite("joint_pos_min", &RobotConfig::joint_pos_min)
@@ -116,7 +122,9 @@ PYBIND11_MODULE(arx5_interface, m)
         .def_readwrite("gripper_motor_type", &RobotConfig::gripper_motor_type)
         .def_readwrite("gravity_vector", &RobotConfig::gravity_vector)
         .def_readwrite("base_link_name", &RobotConfig::base_link_name)
-        .def_readwrite("eef_link_name", &RobotConfig::eef_link_name);
+        .def_readwrite("eef_link_name", &RobotConfig::eef_link_name)
+        .def_readwrite("urdf_path", &RobotConfig::urdf_path);
+
     py::class_<ControllerConfig>(m, "ControllerConfig")
         .def_readwrite("controller_type", &ControllerConfig::controller_type)
         .def_readwrite("default_kp", &ControllerConfig::default_kp)
@@ -124,6 +132,11 @@ PYBIND11_MODULE(arx5_interface, m)
         .def_readwrite("default_gripper_kp", &ControllerConfig::default_gripper_kp)
         .def_readwrite("default_gripper_kd", &ControllerConfig::default_gripper_kd)
         .def_readwrite("over_current_cnt_max", &ControllerConfig::over_current_cnt_max)
+        .def_readwrite("background_send_recv", &ControllerConfig::background_send_recv)
+        .def_readwrite("gravity_compensation", &ControllerConfig::gravity_compensation)
+        .def_readwrite("shutdown_to_passive", &ControllerConfig::shutdown_to_passive)
+        .def_readwrite("interpolation_method", &ControllerConfig::interpolation_method)
+        .def_readwrite("default_preview_time", &ControllerConfig::default_preview_time)
         .def_readwrite("controller_dt", &ControllerConfig::controller_dt);
     py::class_<RobotConfigFactory>(m, "RobotConfigFactory")
         .def_static("get_instance", &RobotConfigFactory::get_instance, py::return_value_policy::reference)

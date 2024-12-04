@@ -3,7 +3,7 @@
 ## Update (2024.08.22)
 - Enable one-step waypoint scheduling (see `python/examples`).
 - Support EtherCAT-CAN adapter (follow the instructions in [EtherCAT-CAN setup](README.md#ethercat-can-setup)).
-- Support arbitrary DoF robot arm (not only 6DoF); thoguh other DoF numbers are not tested yet.
+- Support arbitrary DoF robot arm (not only 6DoF).
 - Allow setting up robot and controller configurations as arguments (see `config.h` and `test_joint_control.py`).
 
 When updating the sdk to your codebase, please first remove the entire `build` folder and run the building process again.
@@ -11,10 +11,10 @@ When updating the sdk to your codebase, please first remove the entire `build` f
 ## Features
 - Run without ROS
 - No `sudo` requirement for building the library (all dependencies are managed under conda environment, thanks to [Cheng Chi](https://cheng-chi.github.io/))
-- Simple python interface with complete type hints (see `python/arx5_interface.pyi`)
+- Simple python interface with complete type hints (see `python/arx5_interface.pyi`, please include it into your vscode config `"python.analysis.extraPaths"`)
 - Joint controller runs at 500Hz in the background (motor communication delay ~0.4ms)
 - Cartesian space controller with keyboard and SpaceMouse tele-operation and teach-replay (thanks to [Cheng Chi](https://cheng-chi.github.io/))
-- Control multiple arms in the same process through C++ multi-threading
+- Control multiple arms in the same process through C++ multi-threading (much better than Python multi-processing)
 
 ## Build & Install
 We set up a conda environment for all the cmake dependencies, so no system package is required. If you want to run `cmake` and `make` after modifying the C++ source files, please make sure you are under the created conda environment (`arx-py310` etc.).  

@@ -23,8 +23,7 @@ def easeInOutQuad(t):
 @click.command()
 @click.argument("model")  # ARX arm model: X5 or L5
 @click.argument("interface")  # can bus name (can0 etc.)
-@click.option("--urdf_path", "-u", default="../models/arx5.urdf", help="URDF file path")
-def main(model: str, interface: str, urdf_path: str):
+def main(model: str, interface: str):
 
     # To initialize robot with different configurations,
     # you can create RobotConfig and ControllerConfig by yourself and modify based on it
@@ -34,6 +33,15 @@ def main(model: str, interface: str, urdf_path: str):
     )
     # Modify the default configuration here
     # controller_config.controller_dt = 0.01 # etc.
+
+    USE_MULTITHREADING = True
+    if USE_MULTITHREADING:
+        # Will create another thread that communicates with the arm, so each send_recv_once() will take no time
+        # for the main thread to execute. Otherwise (without background send/recv), send_recv_once() will block the
+        # main thread until the arm responds (usually 2ms).
+        controller_config.background_send_recv = True
+    else:
+        controller_config.background_send_recv = False
 
     arx5_joint_controller = arx5.Arx5JointController(
         robot_config, controller_config, interface
@@ -48,14 +56,8 @@ def main(model: str, interface: str, urdf_path: str):
     controller_config = arx5_joint_controller.get_controller_config()
 
     step_num = 1500
-    USE_MULTITHREADING = True
-    if USE_MULTITHREADING:
-        # Will create another thread that communicates with the arm, so each send_recv_once() will take no time
-        # for the main thread to execute. Otherwise (without background send/recv), send_recv_once() will block the
-        # main thread until the arm responds (usually 2ms).
-        arx5_joint_controller.enable_background_send_recv()
+
     arx5_joint_controller.reset_to_home()
-    arx5_joint_controller.enable_gravity_compensation(urdf_path)
 
     target_joint_poses = np.array([1.0, 2.0, 2.0, 1.5, 1.5, -1.57])
 
@@ -69,7 +71,7 @@ def main(model: str, interface: str, urdf_path: str):
             arx5_joint_controller.send_recv_once()
         else:
             time.sleep(controller_config.controller_dt)
-        JointState = arx5_joint_controller.get_state()
+        JointState = arx5_joint_controller.get_joint_state()
         arm_dof_pos = JointState.pos().copy()
         arm_dof_vel = JointState.vel().copy()
         # print(arm_dof_pos, arm_dof_vel)
@@ -86,7 +88,7 @@ def main(model: str, interface: str, urdf_path: str):
             arx5_joint_controller.send_recv_once()
         else:
             time.sleep(controller_config.controller_dt)
-        JointState = arx5_joint_controller.get_state()
+        JointState = arx5_joint_controller.get_joint_state()
         # print(f"gripper: {JointState.gripper_pos:.05f}")
 
     arx5_joint_controller.reset_to_home()

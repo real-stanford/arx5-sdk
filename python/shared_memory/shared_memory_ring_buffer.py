@@ -137,11 +137,11 @@ class SharedMemoryRingBuffer:
         # get_last_k can safely read k elements from any count location.
         # Sanity check: when get_max_k == 1, the element pointed by next_idx
         # should be rewritten at minimum self.get_time_budget seconds later.
-        timestamp_lookahead_idx = (next_idx + self.get_max_k - 1) % self.buffer_size
+        timestamp_preview_idx = (next_idx + self.get_max_k - 1) % self.buffer_size
         # print(
-        #     f"count: {count}, type: {type(count)}, {timestamp_lookahead_idx=}, {self.buffer_size=}({type(self.buffer_size)})"
+        #     f"count: {count}, type: {type(count)}, {timestamp_preview_idx=}, {self.buffer_size=}({type(self.buffer_size)})"
         # )
-        old_timestamp = self.timestamp_array.get()[timestamp_lookahead_idx]
+        old_timestamp = self.timestamp_array.get()[timestamp_preview_idx]
         t = time.monotonic()
         if (t - old_timestamp) < self.get_time_budget:
             deltat = t - old_timestamp

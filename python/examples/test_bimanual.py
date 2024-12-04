@@ -7,7 +7,7 @@ ROOT_DIR = os.path.dirname(os.path.dirname(__file__))
 sys.path.append(ROOT_DIR)
 os.chdir(ROOT_DIR)
 import arx5_interface as arx5
-
+import click
 
 def easeInOutQuad(t):
     t *= 2
@@ -17,26 +17,24 @@ def easeInOutQuad(t):
         t -= 1
         return -(t * (t - 2) - 1) / 2
 
-
-def main():
+@click.command()
+@click.argument("model0")  # ARX arm model: X5 or L5
+@click.argument("interface0")  # can bus name (can0 etc.)
+@click.argument("model1")  # ARX arm model: X5 or L5
+@click.argument("interface1")  # can bus name (can0 etc.)
+def main(model0: str, interface0: str, model1: str, interface1: str):
     np.set_printoptions(precision=3, suppress=True)
-    arx5_0 = arx5.Arx5JointController("X5", "can0")
-    arx5_1 = arx5.Arx5JointController("X5", "can1")
+    assert(interface0 != interface1)
+    arx5_0 = arx5.Arx5JointController(model0, interface0)
+    arx5_1 = arx5.Arx5JointController(model1, interface1)
     robot_config = arx5_0.get_robot_config()
     controller_config = arx5_0.get_controller_config()
 
-    arx5_0.enable_background_send_recv()
     arx5_0.reset_to_home()
-    arx5_0.enable_gravity_compensation("../models/arx5.urdf")
-    arx5_1.enable_background_send_recv()
     arx5_1.reset_to_home()
-    arx5_1.enable_gravity_compensation("../models/arx5.urdf")
 
     target_joint_poses = np.array([1.0, 2.0, 2.0, 1.5, 1.5, -1.57])
     step_num = 1500  # 3s
-    USE_TIMER = True
-    if not USE_TIMER:
-        arx5_0.disable_background_send_recv()
 
     for i in range(step_num):
         cmd = arx5.JointState(robot_config.joint_dof)
@@ -45,15 +43,12 @@ def main():
         cmd.gripper_pos = easeInOutQuad((i / (step_num - 1))) * 0.08
         arx5_0.set_joint_cmd(cmd)
         arx5_1.set_joint_cmd(cmd)
-        if not USE_TIMER:
-            arx5_0.send_recv_once()
-            arx5_1.send_recv_once()
-        JointState = arx5_0.get_state()
-        JointState = arx5_1.get_state()
-        arm_dof_pos = JointState.pos().copy()
-        arm_dof_vel = JointState.vel().copy()
+        joint_state = arx5_0.get_joint_state()
+        joint_state = arx5_1.get_joint_state()
+        arm_dof_pos = joint_state.pos().copy()
+        arm_dof_vel = joint_state.vel().copy()
         # print(arm_dof_pos, arm_dof_vel)
-        # print(f"gripper: {JointState.gripper_pos:.05f}")
+        # print(f"gripper: {joint_state.gripper_pos:.05f}")
         time.sleep(controller_config.controller_dt)
 
     for i in range(step_num):
@@ -64,13 +59,10 @@ def main():
         cmd.gripper_pos = easeInOutQuad((1 - i / (step_num - 1))) * 0.08
         arx5_0.set_joint_cmd(cmd)
         arx5_1.set_joint_cmd(cmd)
-        if not USE_TIMER:
-            arx5_0.send_recv_once()
-            arx5_1.send_recv_once()
         time.sleep(controller_config.controller_dt)
-        JointState = arx5_0.get_state()
-        JointState = arx5_1.get_state()
-        # print(f"gripper: {JointState.gripper_pos:.05f}")
+        joint_state = arx5_0.get_joint_state()
+        joint_state = arx5_1.get_joint_state()
+        # print(f"gripper: {joint_state.gripper_pos:.05f}")
 
 
 main()
