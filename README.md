@@ -2,7 +2,7 @@
 
 ## Update (2024.12.05)
 
-Please checkout the `yihuai` branch for the latest update (not throughly tested) with the following features:
+Please checkout the `yihuai` branch for the latest update (not thoroughly tested) with the following features:
 
 - Unify the joint interpolator in both joint controller and cartesian controller for better smoothness
 - Support trajectory updating and velocity interpolation
