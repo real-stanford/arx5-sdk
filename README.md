@@ -1,10 +1,18 @@
 # C++ && Python SDK for ARX5 robot arm
 
+## Update (2024.12.05)
+
+Please checkout the `yihuai` branch for the latest update (not throughly tested) with the following features:
+
+- Unify the joint interpolator in both joint controller and cartesian controller for better smoothness
+- Support trajectory updating and velocity interpolation
+- Fix various bugs for gravity compensation, robot initialization etc.
+
 ## Update (2024.08.22)
 - Enable one-step waypoint scheduling (see `python/examples`).
 - Support EtherCAT-CAN adapter (follow the instructions in [EtherCAT-CAN setup](README.md#ethercat-can-setup)).
 - Support arbitrary DoF robot arm (not only 6DoF); thoguh other DoF numbers are not tested yet.
-- Allow setting up robot and controller configurations as arguments (see `config.h` and `test_joint_control.py`).
+- Allow setting up robot and controller configurations as arguments (see `config.h` and `test_joint_control.py`), thanks to [Yifan Hou](https://yifan-hou.github.io/)
 
 When updating the sdk to your codebase, please first remove the entire `build` folder and run the building process again.
 
