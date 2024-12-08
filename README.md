@@ -100,6 +100,35 @@ sudo udevadm control --reload-rules && sudo udevadm trigger
 sudo slcand -o -f -s8 /dev/arxcan0 can0 && sudo ifconfig can0 up
 ```
 
+Alternatively, if you want not to run the second line everytime, you can also setup a system service:
+
+```sh
+sudo vi /etc/systemd/system/arxcan-setup.service
+```
+
+Copy the following content to the service file
+
+```service
+[Unit]
+After=network.target
+
+[Service]
+Type=oneshot
+ExecStart=/bin/sh -c 'slcand -o -f -s8 /dev/arxcan0 can0 && ip link set can0 up'
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target
+```
+
+And activate the service
+
+```
+sudo systemctl daemon-reload
+sudo systemctl enable arxcan-setup.service
+sudo systemctl start arxcan-setup.service
+sudo systemctl status arxcan-setup.service
+```
 
 ### For adapters using candleLight framework
 After plugging the adapter and running `ip a`, you should immediately find a can interface (usually `can0`). If you only have one arm, simply run 
