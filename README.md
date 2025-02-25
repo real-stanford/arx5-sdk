@@ -1,9 +1,7 @@
 # C++ && Python SDK for ARX5 robot arm
 
 ## Update (2024.12.05)
-
-Please checkout the `yihuai` branch for the latest update (not thoroughly tested) with the following features:
-
+- Add safety checks to zmq_server
 - Unify the joint interpolator in both joint controller and cartesian controller for better smoothness
 - Support trajectory updating and velocity interpolation
 - Fix various bugs for gravity compensation, robot initialization etc.
