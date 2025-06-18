@@ -1,4 +1,12 @@
-# C++ && Python SDK for ARX5 robot arm
+# C++ && Python Controller for ARX5 Robot Arm
+
+## Safety-Related Configs
+
+ - The safety checks in this controller are implemented through joint position, velocity, and torque limits. However, there is a trade-off between safety and reactiveness when setting these limits. To achieve a reasonable precision for our experiements, **the default values are insufficient to guarantee safety when the robot is close to singluarity or the input control signal includes a lot of noise**.
+- We highly recommend that users should **apply safety checks before sending control signals** (joint/eef) to the controller
+- Users could also modify the limit values of the joint velocity at their early stage of deployment.
+  - You can either directly change the default values in `config.h` for your robot model: [X5](https://github.com/real-stanford/arx5-sdk/blob/709f7ab7429f97c83e18687e650f3ee77d14719a/include/app/config.h#L96), [L5](https://github.com/real-stanford/arx5-sdk/blob/709f7ab7429f97c83e18687e650f3ee77d14719a/include/app/config.h#L140C25-L140C57) and **recompile the package**
+  - Or (more recommended) change the config values before instanticating the controller in python, similar to [this example](https://github.com/real-stanford/arx5-sdk/blob/709f7ab7429f97c83e18687e650f3ee77d14719a/python/examples/test_joint_control.py#L31). You need to set the values with a new numpy array, e.g. `robot_config.joint_vel_max=np.array([2,2,2,2,2,2])`, rather than indexing some of the existing values `robot_config.joint_vel_max[0]=2.0`, which will raise an error.
 
 ## Update (2024.12.05)
 - Add safety checks to zmq_server
