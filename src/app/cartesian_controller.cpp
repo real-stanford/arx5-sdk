@@ -43,6 +43,8 @@ void Arx5CartesianController::set_eef_cmd(EEFState new_cmd)
     JointState target_joint_state{robot_config_.joint_dof};
     target_joint_state.pos = std::get<1>(ik_results);
     target_joint_state.gripper_pos = new_cmd.gripper_pos;
+    target_joint_state.gripper_vel = new_cmd.gripper_vel;
+    target_joint_state.gripper_torque = new_cmd.gripper_torque;
     target_joint_state.timestamp = new_cmd.timestamp;
 
     double current_time = get_timestamp();
@@ -82,6 +84,8 @@ void Arx5CartesianController::set_eef_traj(std::vector<EEFState> new_traj)
         JointState target_joint_state{robot_config_.joint_dof};
         target_joint_state.pos = std::get<1>(ik_results);
         target_joint_state.gripper_pos = eef_state.gripper_pos;
+        target_joint_state.gripper_vel = eef_state.gripper_vel;
+        target_joint_state.gripper_torque = eef_state.gripper_torque;
         target_joint_state.timestamp = eef_state.timestamp;
 
         joint_traj.push_back(target_joint_state);
@@ -115,6 +119,8 @@ EEFState Arx5CartesianController::get_eef_cmd()
     EEFState eef_cmd;
     eef_cmd.pose_6d = solver_->forward_kinematics(joint_cmd.pos);
     eef_cmd.gripper_pos = joint_cmd.gripper_pos;
+    eef_cmd.gripper_vel = joint_cmd.gripper_vel;
+    eef_cmd.gripper_torque = joint_cmd.gripper_torque;
     eef_cmd.timestamp = joint_cmd.timestamp;
     return eef_cmd;
 }

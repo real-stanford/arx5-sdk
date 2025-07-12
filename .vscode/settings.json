@@ -93,7 +93,9 @@
         "oshw.h": "c",
         "time.h": "c",
         "socket.h": "c",
-        "pthread.h": "c"
+        "pthread.h": "c",
+        "format": "cpp",
+        "span": "cpp"
     },
     "python.analysis.extraPaths": [
         "python",
