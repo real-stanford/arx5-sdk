@@ -534,6 +534,19 @@ void Arx5ControllerBase::update_output_cmd_()
             output_joint_cmd_.torque[i] = -robot_config_.joint_torque_max[i];
         }
     }
+    // Gripper torque clipping
+    if (output_joint_cmd_.gripper_torque > robot_config_.gripper_torque_max)
+    {
+        logger_->debug("Gripper torque cmd clipped from {:.3f} to max {:.3f}", output_joint_cmd_.gripper_torque,
+                       robot_config_.gripper_torque_max);
+        output_joint_cmd_.gripper_torque = robot_config_.gripper_torque_max;
+    }
+    else if (output_joint_cmd_.gripper_torque < -robot_config_.gripper_torque_max)
+    {
+        logger_->debug("Gripper torque cmd clipped from {:.3f} to min {:.3f}", output_joint_cmd_.gripper_torque,
+                       -robot_config_.gripper_torque_max);
+        output_joint_cmd_.gripper_torque = -robot_config_.gripper_torque_max;
+    }
 }
 
 void Arx5ControllerBase::send_recv_()
@@ -590,8 +603,11 @@ void Arx5ControllerBase::send_recv_()
 
         double gripper_motor_pos =
             output_joint_cmd_.gripper_pos / robot_config_.gripper_width * robot_config_.gripper_open_readout;
+        double gripper_motor_vel =
+            output_joint_cmd_.gripper_vel / robot_config_.gripper_width * robot_config_.gripper_open_readout;
+        double gripper_motor_torque = output_joint_cmd_.gripper_torque / torque_constant_DM_J4310;
         can_handle_.send_DM_motor_cmd(robot_config_.gripper_motor_id, gain_.gripper_kp, gain_.gripper_kd,
-                                      gripper_motor_pos, 0, 0);
+                                      gripper_motor_pos, gripper_motor_vel, gripper_motor_torque);
         int finish_send_motor_time_us = get_time_us();
         sleep_us(communicate_sleep_us - (finish_send_motor_time_us - start_send_motor_time_us));
     }

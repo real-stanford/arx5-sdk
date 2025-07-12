@@ -39,22 +39,31 @@ struct JointState
         : pos(pos), vel(vel), torque(torque), gripper_pos(gripper_pos)
     {
     }
+    JointState(VecDoF pos, VecDoF vel, VecDoF torque, double gripper_pos, double gripper_vel, double gripper_torque)
+        : pos(pos), vel(vel), torque(torque), gripper_pos(gripper_pos), gripper_vel(gripper_vel),
+          gripper_torque(gripper_torque)
+    {
+    }
 
     JointState operator+(const JointState &other) const
     {
-        return JointState(pos + other.pos, vel + other.vel, torque + other.torque, gripper_pos + other.gripper_pos);
+        return JointState(pos + other.pos, vel + other.vel, torque + other.torque, gripper_pos + other.gripper_pos,
+                          gripper_vel + other.gripper_vel, gripper_torque + other.gripper_torque);
     }
     JointState operator-(const JointState &other) const
     {
-        return JointState(pos - other.pos, vel - other.vel, torque - other.torque, gripper_pos - other.gripper_pos);
+        return JointState(pos - other.pos, vel - other.vel, torque - other.torque, gripper_pos - other.gripper_pos,
+                          gripper_vel - other.gripper_vel, gripper_torque - other.gripper_torque);
     }
     JointState operator*(const double &scalar) const
     {
-        return JointState(pos * scalar, vel * scalar, torque * scalar, gripper_pos * scalar);
+        return JointState(pos * scalar, vel * scalar, torque * scalar, gripper_pos * scalar, gripper_vel * scalar,
+                          gripper_torque * scalar);
     }
     JointState operator/(const double &scalar) const
     {
-        return JointState(pos / scalar, vel / scalar, torque / scalar, gripper_pos / scalar);
+        return JointState(pos / scalar, vel / scalar, torque / scalar, gripper_pos / scalar, gripper_vel / scalar,
+                          gripper_torque / scalar);
     }
     // For pybind11 to update values
     VecDoF &get_pos_ref()
@@ -69,7 +78,6 @@ struct JointState
     {
         return torque;
     }
-
 };
 
 struct Gain
@@ -118,13 +126,18 @@ struct EEFState
     EEFState(Pose6d pose_6d, double gripper_pos) : pose_6d(pose_6d), gripper_pos(gripper_pos)
     {
     }
+    EEFState(Pose6d pose_6d, double gripper_pos, double gripper_vel, double gripper_torque)
+        : pose_6d(pose_6d), gripper_pos(gripper_pos), gripper_vel(gripper_vel), gripper_torque(gripper_torque)
+    {
+    }
     EEFState operator+(const EEFState &other) const
     {
-        return EEFState(pose_6d + other.pose_6d, gripper_pos + other.gripper_pos);
+        return EEFState(pose_6d + other.pose_6d, gripper_pos + other.gripper_pos, gripper_vel + other.gripper_vel,
+                        gripper_torque + other.gripper_torque);
     }
     EEFState operator*(const double &scalar) const
     {
-        return EEFState(pose_6d * scalar, gripper_pos * scalar);
+        return EEFState(pose_6d * scalar, gripper_pos * scalar, gripper_vel * scalar, gripper_torque * scalar);
     }
     Pose6d &get_pose_6d_ref()
     {

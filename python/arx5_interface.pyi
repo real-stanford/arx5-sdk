@@ -100,6 +100,16 @@ class JointState:
         torque: npt.NDArray[np.float64],
         gripper_pos: float,
     ) -> None: ...
+    @overload
+    def __init__(
+        self,
+        pos: npt.NDArray[np.float64],
+        vel: npt.NDArray[np.float64],
+        torque: npt.NDArray[np.float64],
+        gripper_pos: float,
+        gripper_vel: float,
+        gripper_torque: float,
+    ) -> None: ...
     def __add__(self, other: JointState) -> JointState: ...
     def __mul__(self, scalar: float) -> JointState: ...
     def pos(self) -> npt.NDArray[np.float64]: ...
@@ -149,6 +159,14 @@ class EEFState:
     @overload
     def __init__(
         self, pose_6d: npt.NDArray[np.float64], gripper_pos: float
+    ) -> None: ...
+    @overload
+    def __init__(
+        self,
+        pose_6d: npt.NDArray[np.float64],
+        gripper_pos: float,
+        gripper_vel: float,
+        gripper_torque: float,
     ) -> None: ...
     def __add__(self, other: EEFState) -> EEFState: ...
     def __mul__(self, scalar: float) -> EEFState: ...
