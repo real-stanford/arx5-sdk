@@ -18,7 +18,7 @@ dependencies:
   - pyzmq
   - pynput
   - pip
-  - conda-forge::soem # This package is missing in aarch64
+  - conda-forge::soem=1.4.0 # This package is missing in aarch64
   # To install it on aarch64 (arm64), comment out this package and first create the arx-py39 environment.
   # Directly clone the SOEM repository and install it to the conda environment (ensure $CONDA_PREFIX points to arx-py39):
   # `conda activate arx-py39`
