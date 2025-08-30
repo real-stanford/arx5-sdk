@@ -8,6 +8,12 @@
   - You can either directly change the default values in `config.h` for your robot model: [X5](https://github.com/real-stanford/arx5-sdk/blob/709f7ab7429f97c83e18687e650f3ee77d14719a/include/app/config.h#L96), [L5](https://github.com/real-stanford/arx5-sdk/blob/709f7ab7429f97c83e18687e650f3ee77d14719a/include/app/config.h#L140C25-L140C57) and **recompile the package**
   - Or (more recommended) change the config values before instanticating the controller in python, similar to [this example](https://github.com/real-stanford/arx5-sdk/blob/709f7ab7429f97c83e18687e650f3ee77d14719a/python/examples/test_joint_control.py#L31). You need to set the values with a new numpy array, e.g. `robot_config.joint_vel_max=np.array([2,2,2,2,2,2])`, rather than indexing some of the existing values `robot_config.joint_vel_max[0]=2.0`, which will raise an error.
 
+
+## Update (2025.08.29)
+- Support gripper force control (see `python/examples/test_gripper_force_compensation.py`)
+- Set conda-forge::soem version to 1.4.0 in conda environment files, thanks [Haoyu Xiong](https://haoyu-x.github.io/) for pointing out.
+- If you encounter error `undefined symbol: EcatError`, this is because the soem version is updated to 2.0.0, which is not compatible with the current version of the controller. Please downgrade soem version to 1.4.0 (`conda install conda-forge::soem=1.4.0`).
+
 ## Update (2024.12.05)
 - Add safety checks to zmq_server
 - Unify the joint interpolator in both joint controller and cartesian controller for better smoothness
