@@ -16,10 +16,14 @@ import arx5_interface as arx5
 def calibrate_joint(model: str, interface: str, joint_id: int):
     if type(joint_id) == str:
         joint_id = int(joint_id)
-    joint_controller_config = arx5.ControllerConfigFactory.get_instance().get_config("joint_controller", 6)
+    joint_controller_config = arx5.ControllerConfigFactory.get_instance().get_config(
+        "joint_controller", 6
+    )
     joint_controller_config.gravity_compensation = False
     robot_config = arx5.RobotConfigFactory.get_instance().get_config(model)
-    joint_controller = arx5.Arx5JointController(robot_config, joint_controller_config, interface)
+    joint_controller = arx5.Arx5JointController(
+        robot_config, joint_controller_config, interface
+    )
     gain = arx5.Gain(joint_controller.get_robot_config().joint_dof)
     joint_controller.set_gain(gain)
     joint_controller.calibrate_joint(joint_id)
@@ -34,10 +38,14 @@ def calibrate_joint(model: str, interface: str, joint_id: int):
 @click.argument("model")  # ARX arm model: X5 or L5
 @click.argument("interface")  # can bus name (can0 etc.)
 def calibrate_gripper(model: str, interface: str):
-    joint_controller_config = arx5.ControllerConfigFactory.get_instance().get_config("joint_controller", 6)
+    joint_controller_config = arx5.ControllerConfigFactory.get_instance().get_config(
+        "joint_controller", 6
+    )
     joint_controller_config.gravity_compensation = False
     robot_config = arx5.RobotConfigFactory.get_instance().get_config(model)
-    joint_controller = arx5.Arx5JointController(robot_config, joint_controller_config, interface)
+    joint_controller = arx5.Arx5JointController(
+        robot_config, joint_controller_config, interface
+    )
     joint_controller.calibrate_gripper()
 
 
@@ -45,10 +53,14 @@ def calibrate_gripper(model: str, interface: str):
 @click.argument("model")  # ARX arm model: X5 or L5
 @click.argument("interface")  # can bus name (can0 etc.)
 def check_motor_movements(model: str, interface: str):
-    joint_controller_config = arx5.ControllerConfigFactory.get_instance().get_config("joint_controller", 6)
+    joint_controller_config = arx5.ControllerConfigFactory.get_instance().get_config(
+        "joint_controller", 6
+    )
     joint_controller_config.gravity_compensation = False
     robot_config = arx5.RobotConfigFactory.get_instance().get_config(model)
-    joint_controller = arx5.Arx5JointController(robot_config, joint_controller_config, interface)
+    joint_controller = arx5.Arx5JointController(
+        robot_config, joint_controller_config, interface
+    )
     while True:
         state = joint_controller.get_joint_state()
         pos = state.pos()
@@ -58,5 +70,6 @@ def check_motor_movements(model: str, interface: str):
 
 if __name__ == "__main__":
     check_motor_movements()
+    ## To actually calibrate, uncomment one of the following lines
     # calibrate_joint()
     # calibrate_gripper()
