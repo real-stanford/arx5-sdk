@@ -1,6 +1,6 @@
-cmake_minimum_required( VERSION 3.16.3 )
+cmake_minimum_required(VERSION 3.16.3)
 
-project( arx5-sdk )
+project(arx5-sdk)
 
 set(CMAKE_BUILD_TYPE Debug)
 
@@ -64,14 +64,14 @@ target_link_libraries(ArxCartesianController
 )
 
 # Hack for py310 (conda environment is slightly different from other python versions)
-target_include_directories(ArxJointController PUBLIC $ENV{CONDA_PREFIX}/include/kdl_parser  $ENV{CONDA_PREFIX}/include/urdfdom_headers)
-target_include_directories(ArxCartesianController PUBLIC $ENV{CONDA_PREFIX}/include/kdl_parser  $ENV{CONDA_PREFIX}/include/urdfdom_headers)
+target_include_directories(ArxJointController PUBLIC $ENV{CONDA_PREFIX}/include/kdl_parser $ENV{CONDA_PREFIX}/include/urdfdom_headers)
+target_include_directories(ArxCartesianController PUBLIC $ENV{CONDA_PREFIX}/include/kdl_parser $ENV{CONDA_PREFIX}/include/urdfdom_headers)
 
 
 add_executable(test_joint_controller examples/test_joint_controller.cpp)
-target_link_libraries(test_joint_controller 
-    ${LIB_DIR}/libhardware.so 
-    ${LIB_DIR}/libsolver.so 
+target_link_libraries(test_joint_controller
+    ${LIB_DIR}/libhardware.so
+    ${LIB_DIR}/libsolver.so
     ArxJointController
     Eigen3::Eigen
     Threads::Threads
@@ -82,8 +82,8 @@ target_link_libraries(test_joint_controller
 )
 
 add_executable(test_cartesian_controller examples/test_cartesian_controller.cpp)
-target_link_libraries(test_cartesian_controller 
-    ${LIB_DIR}/libhardware.so 
+target_link_libraries(test_cartesian_controller
+    ${LIB_DIR}/libhardware.so
     ${LIB_DIR}/libsolver.so
     ArxCartesianController
     spdlog::spdlog
