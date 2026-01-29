@@ -8,6 +8,10 @@
   - You can either directly change the default values in `config.h` for your robot model: [X5](https://github.com/real-stanford/arx5-sdk/blob/709f7ab7429f97c83e18687e650f3ee77d14719a/include/app/config.h#L96), [L5](https://github.com/real-stanford/arx5-sdk/blob/709f7ab7429f97c83e18687e650f3ee77d14719a/include/app/config.h#L140C25-L140C57) and **recompile the package**
   - Or (more recommended) change the config values before instanticating the controller in python, similar to [this example](https://github.com/real-stanford/arx5-sdk/blob/709f7ab7429f97c83e18687e650f3ee77d14719a/python/examples/test_joint_control.py#L31). You need to set the values with a new numpy array, e.g. `robot_config.joint_vel_max=np.array([2,2,2,2,2,2])`, rather than indexing some of the existing values `robot_config.joint_vel_max[0]=2.0`, which will raise an error.
 
+## Update (2026.01.29)
+- Update library for x86_64 Ubuntu20.04. If you have trouble loading the current libraries (version GLIBC_2.32 not found), please override `lib/x86_64/libsolver_20_04.so` to `lib/x86_64/libsolver.so` and `lib/x86_64/libhardware_20_04.so` to `lib/x86_64/libhardware.so` and recompile the package.
+- The default libraries are compiled on Ubuntu 22.04
+
 ## Update (2026.01.11)
 - In some recent robot models, the gripper motor is mounted in a different direction, which will lead to error: "Gripper position error: got xxx but should be in xxx". Please set the `gripper_open_readout` in `include/app/config.h` to a negative number and it should work normally. According to a github issue, a typical readout might be `gripper_open_readout=-3.4` and `gripper_width=0.082`. If the readout gripper width is inaccurate, you may also calibrate yourself in `python/examples/calibrate.py`
 
