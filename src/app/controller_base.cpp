@@ -71,13 +71,15 @@ Arx5ControllerBase::~Arx5ControllerBase()
 JointState Arx5ControllerBase::get_joint_cmd()
 {
     std::lock_guard<std::mutex> guard(cmd_mutex_);
-    return output_joint_cmd_;
+    JointState cmd = output_joint_cmd_;
+    return cmd;
 }
 
 JointState Arx5ControllerBase::get_joint_state()
 {
     std::lock_guard<std::mutex> guard(state_mutex_);
-    return joint_state_;
+    JointState state = joint_state_;
+    return state;
 }
 
 EEFState Arx5ControllerBase::get_eef_state()
@@ -123,7 +125,9 @@ void Arx5ControllerBase::set_gain(Gain new_gain)
 Gain Arx5ControllerBase::get_gain()
 {
     std::lock_guard<std::mutex> guard(cmd_mutex_);
-    return gain_;
+    // Create a copy of gain_ to avoid returning a reference to the internal state
+    Gain gain(gain_.kp, gain_.kd, gain_.gripper_kp, gain_.gripper_kd);
+    return gain;
 }
 
 double Arx5ControllerBase::get_timestamp()
@@ -132,11 +136,13 @@ double Arx5ControllerBase::get_timestamp()
 }
 RobotConfig Arx5ControllerBase::get_robot_config()
 {
-    return robot_config_;
+    RobotConfig config = robot_config_;
+    return config;
 }
 ControllerConfig Arx5ControllerBase::get_controller_config()
 {
-    return controller_config_;
+    ControllerConfig config = controller_config_;
+    return config;
 }
 void Arx5ControllerBase::set_log_level(spdlog::level::level_enum level)
 {
