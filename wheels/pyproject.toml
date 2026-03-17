@@ -1,0 +1,34 @@
+[build-system]
+requires = [
+    "setuptools>=42",
+    "wheel",
+    "cmake>=3.10",
+    "cibuildwheel",
+]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "arx5-interface"
+version = "0.1.0"
+authors = [{ name = "Yihuai Gao", email = "yihuai@stanford.edu" }]
+description = "C++ and Python controller for ARX5 robot arm developed by @yihuai-gao (@real-stanford)"
+
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+]
+
+[project.urls]
+Homepage = "https://github.com/yihuai-gao/arx5-sdk"
+
+[tool.setuptools]
+packages = ["arx5_interface"]
+package-data = { arx5_interface = [
+    "python/*.pyi",
+    "python/*.so",
+    "include/*",
+    "src/*",
+    "lib/*.so",
+    "models/*",
+] }
