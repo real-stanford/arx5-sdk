@@ -2,9 +2,49 @@
 #include "utils.h"
 #include <cstdarg>
 #include <cstdio>
+#include <dlfcn.h>
 
 namespace arx
 {
+
+// Returns the directory containing this .so at runtime
+std::string get_root_dir()
+{
+    // Local install file structure:
+    // arx5-sdk/python/arx5_interface.so
+    // arx5-sdk/models/xxx.urdf
+
+    // pip install file structure:
+    // arx5_interface/python/arx5_interface.so
+    // arx5_interface/models/xxx.urdf
+
+    Dl_info dl_info;
+    if (dladdr((void *)&get_root_dir, &dl_info) && dl_info.dli_fname)
+    {
+        std::string path(dl_info.dli_fname);
+        size_t last_slash = path.rfind('/');
+        if (last_slash != std::string::npos)
+        {
+            path = path.substr(0, last_slash);
+            size_t last_slash2 = path.rfind('/');
+            if (last_slash2 != std::string::npos)
+            {
+                // printf("Found module directory: %s\n", path.substr(0, last_slash2).c_str());
+                return path.substr(0, last_slash2);
+            }
+        }
+    }
+    printf("Failed to get pybind library directory\n. Falling back to SDK_ROOT: %s\n", std::string(SDK_ROOT).c_str());
+    return std::string(SDK_ROOT);
+}
+
+// Replaces the compile-time SDK_ROOT prefix with the runtime module directory
+std::string get_urdf(std::string model)
+{
+    std::string urdf_path = std::string(get_root_dir()) + "/models/" + model + ".urdf";
+    printf("Found urdf path: %s\n", urdf_path.c_str());
+    return urdf_path;
+}
 
 MovingAverageXd::MovingAverageXd(int dof, int window_size)
 {

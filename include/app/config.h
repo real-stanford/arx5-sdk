@@ -2,6 +2,7 @@
 #define CONFIG_H
 
 #include "app/common.h"
+#include "utils.h"
 #include <memory>
 #include <unordered_map>
 #include <vector>
@@ -109,7 +110,7 @@ class RobotConfigFactory
             (Eigen::Vector3d() << 0, 0, -9.807).finished(),                   // gravity_vector
             "base_link",                                                      // base_link_name
             "eef_link",                                                       // eef_link_name
-            std::string(SDK_ROOT) + "/models/X5.urdf"                         // urdf_path
+            get_urdf("X5")                                                    // urdf_path
         );
         configurations["X5_umi"] = std::make_shared<RobotConfig>(
             "X5_umi",                                                      // robot_model
@@ -131,7 +132,7 @@ class RobotConfigFactory
             (Eigen::Vector3d() << 0, 0, -9.807).finished(),                   // gravity_vector
             "base_link",                                                      // base_link_name
             "eef_link",                                                       // eef_link_name
-            std::string(SDK_ROOT) + "/models/X5_umi.urdf"                     // urdf_path
+            get_urdf("X5_umi")                                                // urdf_path
         );
         configurations["L5"] = std::make_shared<RobotConfig>(
             "L5",                                                          // robot_model
@@ -153,7 +154,7 @@ class RobotConfigFactory
             (Eigen::Vector3d() << 0, 0, -9.807).finished(),                   // gravity_vector
             "base_link",                                                      // base_link_name
             "eef_link",                                                       // eef_link_name
-            std::string(SDK_ROOT) + "/models/L5.urdf"                         // urdf_path
+            get_urdf("L5")                                                    // urdf_path
         );
         configurations["L5_umi"] = std::make_shared<RobotConfig>(
             "L5_umi",                                                      // robot_model
@@ -175,7 +176,7 @@ class RobotConfigFactory
             (Eigen::Vector3d() << 0, 0, -9.807).finished(),                   // gravity_vector
             "base_link",                                                      // base_link_name
             "eef_link",                                                       // eef_link_name
-            std::string(SDK_ROOT) + "/models/L5_umi.urdf"                     // urdf_path
+            get_urdf("L5_umi")                                                // urdf_path
         );
         configurations["X7_left"] = std::make_shared<RobotConfig>(
             "X7_left",                                                                 // robot_model
@@ -197,7 +198,7 @@ class RobotConfigFactory
             (Eigen::Vector3d() << 0, 0, -9.807).finished(),                                        // gravity_vector
             "base_link",                                                                           // base_link_name
             "eef_link",                                                                            // eef_link_name
-            std::string(SDK_ROOT) + "/models/X7_left.urdf"                                         // urdf_path
+            get_urdf("X7_left")                                                                    // urdf_path
         );
         configurations["X7_right"] = std::make_shared<RobotConfig>(
             "X7_right",                                                                   // robot_model
@@ -219,7 +220,7 @@ class RobotConfigFactory
             (Eigen::Vector3d() << 0, 0, -9.807).finished(),                                        // gravity_vector
             "base_link",                                                                           // base_link_name
             "eef_link",                                                                            // eef_link_name
-            std::string(SDK_ROOT) + "/models/X7_right.urdf"                                        // urdf_path
+            get_urdf("X7_right")                                                                   // urdf_path
         );
     }
 
