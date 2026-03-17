@@ -9,10 +9,12 @@
 #include <pybind11/eigen.h>
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
+
 namespace py = pybind11;
 using namespace arx;
 using Pose6d = Eigen::Matrix<double, 6, 1>;
 using VecDoF = Eigen::VectorXd;
+
 PYBIND11_MODULE(arx5_interface, m)
 {
     py::enum_<spdlog::level::level_enum>(m, "LogLevel")
