@@ -12,7 +12,7 @@ import numpy as np
 joint_dof = 6
 robot_config = arx5.RobotConfigFactory.get_instance().get_config("X5")
 solver = arx5.Arx5Solver(
-    "../models/arx5.urdf",
+    "../models/X5.urdf",
     # "../models/arx7_left.urdf",
     joint_dof,
     robot_config.joint_pos_min,
