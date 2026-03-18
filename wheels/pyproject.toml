@@ -27,8 +27,6 @@ packages = ["arx5_interface"]
 package-data = { arx5_interface = [
     "python/*.pyi",
     "python/*.so",
-    "include/*",
-    "src/*",
-    "lib/*.so",
+    "lib/**/*.so",
     "models/*",
 ] }
