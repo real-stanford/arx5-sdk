@@ -9,7 +9,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "arx5-interface"
-version = "0.1.1"
+version = "0.1.2"
 authors = [{ name = "Yihuai Gao", email = "yihuai@stanford.edu" }]
 description = "C++ and Python controller for ARX5 robot arm developed by @yihuai-gao (@real-stanford)"
 
