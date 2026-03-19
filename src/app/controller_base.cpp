@@ -171,7 +171,8 @@ void Arx5ControllerBase::reset_to_home()
 
     // calculate the maximum joint position error
     double max_pos_error = (init_state.pos - VecDoF::Zero(robot_config_.joint_dof)).cwiseAbs().maxCoeff();
-    max_pos_error = std::max(max_pos_error, init_state.gripper_pos * 2 / robot_config_.gripper_width);
+    max_pos_error = std::max(max_pos_error,
+                             (init_state.gripper_pos - robot_config_.gripper_width) * 2 / robot_config_.gripper_width);
     // interpolate from current kp kd to default kp kd in max(max_pos_error, 0.5)s
     // and keep the target for max(max_pos_error, 0.5)s
     double wait_time = std::max(max_pos_error, 0.5);
@@ -182,7 +183,8 @@ void Arx5ControllerBase::reset_to_home()
     bool prev_running = background_send_recv_running_;
     background_send_recv_running_ = true;
     target_state.timestamp = get_timestamp() + wait_time;
-    target_state.pos[2] = 0.03; // avoiding clash
+    target_state.pos[2] = 0.03;                             // avoiding clash
+    target_state.gripper_pos = robot_config_.gripper_width; // fully open
 
     {
         std::lock_guard<std::mutex> guard(cmd_mutex_);
