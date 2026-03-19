@@ -138,6 +138,11 @@ class RobotConfigFactory
             "eef_link",                                                       // eef_link_name
             model_dir + "/X5_umi.urdf"                                        // urdf_path
         );
+
+        configurations["X5_iphumi"] = std::make_shared<RobotConfig>(*configurations["X5_umi"]);
+        configurations["X5_iphumi"]->robot_model = "X5_iphumi";
+        configurations["X5_iphumi"]->urdf_path = model_dir + "/X5_iphumi.urdf";
+
         configurations["L5"] = std::make_shared<RobotConfig>(
             "L5",                                                          // robot_model
             (VecDoF(6) << -3.14, -0.05, -0.1, -1.6, -1.57, -2).finished(), // joint_pos_min
@@ -182,6 +187,11 @@ class RobotConfigFactory
             "eef_link",                                                       // eef_link_name
             model_dir + "/L5_umi.urdf"                                        // urdf_path
         );
+
+        configurations["L5_iphumi"] = std::make_shared<RobotConfig>(*configurations["L5_umi"]);
+        configurations["L5_iphumi"]->robot_model = "L5_iphumi";
+        configurations["L5_iphumi"]->urdf_path = model_dir + "/L5_iphumi.urdf";
+
         configurations["X7_left"] = std::make_shared<RobotConfig>(
             "X7_left",                                                                 // robot_model
             (VecDoF(7) << -2.09439, -1.5, -1.5, -1.5, -1.2, -0.3, -0.7854).finished(), // joint_pos_min

@@ -1,0 +1,50 @@
+FROM quay.io/pypa/manylinux_2_28_x86_64:2025.09.01-1
+
+WORKDIR /root
+
+RUN dnf install -y eigen3-devel
+RUN dnf install -y fmt-devel
+RUN dnf install -y spdlog-devel
+RUN dnf install -y boost-devel
+RUN dnf install -y orocos-kdl-devel
+RUN dnf install -y urdfdom-devel
+RUN dnf install -y tinyxml2-devel
+
+
+RUN git clone https://github.com/OpenEtherCATsociety/SOEM.git && cd SOEM && git checkout v1.4.0 && \
+    sed -i "s/-Werror//g" CMakeLists.txt && \
+    sed -i 's/<ethercattype.h>/"ethercattype.h"/g' soem/ethercateoe.h && \
+    mkdir build && cd build && cmake -DCMAKE_POLICY_VERSION_MINIMUM=3.5 -DCMAKE_INSTALL_PREFIX=/usr/local -DCMAKE_POSITION_INDEPENDENT_CODE=ON .. && make -j && make install
+
+RUN git clone https://github.com/ros/kdl_parser.git && cd kdl_parser && git checkout 1.14.2 && \
+    cd kdl_parser && mkdir build && cd build && cmake -DCMAKE_INSTALL_PREFIX=/usr/local .. && make -j && make install
+
+RUN mkdir -p /usr/local/include/kdl_parser && \
+    mv /usr/local/include/kdl_parser.hpp /usr/local/include/kdl_parser/kdl_parser.hpp && \
+    mv /usr/local/include/visibility_control.hpp /usr/local/include/kdl_parser/visibility_control.hpp
+
+ENV CMAKE_PREFIX_PATH="/usr/local:${CMAKE_PREFIX_PATH}"
+
+ARG PYTHON_VERSION
+
+COPY src /root/arx5-sdk/arx5_interface/src
+COPY include /root/arx5-sdk/arx5_interface/include
+COPY python /root/arx5-sdk/arx5_interface/python
+COPY models /root/arx5-sdk/arx5_interface/models
+COPY wheels/pyproject.toml /root/arx5-sdk/
+COPY wheels/setup.py /root/arx5-sdk/
+COPY wheels/CMakeLists.txt /root/arx5-sdk/
+COPY wheels/lib/x86_64 /root/arx5-sdk/arx5_interface/lib/x86_64
+COPY wheels/__init__.py /root/arx5-sdk/arx5_interface/__init__.py
+
+RUN cd arx5-sdk && \
+    export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/lib:/root/arx5-sdk/arx5_interface/lib/x86_64 && \
+    set -e && \
+    /opt/python/${PYTHON_VERSION}/bin/python -m venv ${PYTHON_VERSION} && \
+    source ${PYTHON_VERSION}/bin/activate && \
+    pip install pybind11 && \
+    pip install -e . && \
+    pip wheel . && \
+    PACKAGE_VERSION=$(grep "version = " pyproject.toml | sed 's/version = "\(.*\)"/\1/') && \
+    auditwheel repair arx5_interface-${PACKAGE_VERSION}-${PYTHON_VERSION}-linux_x86_64.whl; \
+    rm /root/arx5-sdk/arx5_interface/python/*.so

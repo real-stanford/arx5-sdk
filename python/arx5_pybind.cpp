@@ -17,7 +17,7 @@ using VecDoF = Eigen::VectorXd;
 
 PYBIND11_MODULE(arx5_interface, m)
 {
-    py::enum_<spdlog::level::level_enum>(m, "LogLevel")
+    py::enum_<spdlog::level::level_enum>(m, "LogLevel", py::module_local())
         .value("TRACE", spdlog::level::level_enum::trace)
         .value("DEBUG", spdlog::level::level_enum::debug)
         .value("INFO", spdlog::level::level_enum::info)
