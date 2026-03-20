@@ -2,6 +2,7 @@
 
 
 PYTHON_VERSION="cp310-cp310"
+# All available versions: cp38-cp38 cp39-cp39 cp310-cp310 cp311-cp311 cp312-cp312 cp313-cp313 cp314-cp314
 
 ARCH=$(uname -m)
 
