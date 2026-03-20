@@ -171,8 +171,8 @@ void Arx5ControllerBase::reset_to_home()
 
     // calculate the maximum joint position error
     double max_pos_error = (init_state.pos - VecDoF::Zero(robot_config_.joint_dof)).cwiseAbs().maxCoeff();
-    max_pos_error = std::max(max_pos_error,
-                             (init_state.gripper_pos - robot_config_.gripper_width) * 2 / robot_config_.gripper_width);
+    max_pos_error = std::max(max_pos_error, std::abs(init_state.gripper_pos - robot_config_.gripper_width) * 2 /
+                                                robot_config_.gripper_width);
     // interpolate from current kp kd to default kp kd in max(max_pos_error, 0.5)s
     // and keep the target for max(max_pos_error, 0.5)s
     double wait_time = std::max(max_pos_error, 0.5);
@@ -310,7 +310,8 @@ void Arx5ControllerBase::check_joint_state_sanity_()
         joint_state_.gripper_pos > robot_config_.gripper_width + gripper_width_tolerance)
     {
         logger_->error("Gripper position error: got {:.3f} but should be in 0~{:.3f} (m). Please close the gripper "
-                       "before turning the arm on or recalibrate gripper home and width.",
+                       "before turning on the arm; change robot_config.gripper_open_readout to a negative number (a "
+                       "common value is -3.4 for some recent robots); or recalibrate gripper home and width.",
                        joint_state_.gripper_pos, robot_config_.gripper_width);
         enter_emergency_state_();
     }
