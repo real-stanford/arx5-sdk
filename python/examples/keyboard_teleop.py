@@ -10,7 +10,7 @@ import numpy as np
 ROOT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(ROOT_DIR)
 os.chdir(ROOT_DIR)
-from arx5_interface import Arx5CartesianController, EEFState, Gain, LogLevel
+from arx5_interface import Arx5CartesianController, ControllerConfigFactory, EEFState, Gain, LogLevel, RobotConfigFactory
 from multiprocessing.managers import SharedMemoryManager
 
 import time
@@ -154,7 +154,11 @@ def start_keyboard_teleop(controller: Arx5CartesianController):
 @click.argument("model")  # ARX arm model: X5 or L5
 @click.argument("interface")  # can bus name (can0 etc.)
 def main(model: str, interface: str):
-    controller = Arx5CartesianController(model, interface)
+    robot_config = RobotConfigFactory.get_instance().get_config(model)
+    controller_config = ControllerConfigFactory.get_instance().get_config(
+        "cartesian_controller", robot_config.joint_dof
+    )
+    controller = Arx5CartesianController(robot_config, controller_config, interface)
     controller.reset_to_home()
 
     robot_config = controller.get_robot_config()
