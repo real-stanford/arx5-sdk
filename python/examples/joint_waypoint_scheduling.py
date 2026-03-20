@@ -15,7 +15,11 @@ import numpy as np
 @click.argument("model")  # ARX arm model: X5 or L5
 @click.argument("interface")  # can bus name (can0 etc.)
 def main(model: str, interface: str):
-    controller = arx5.Arx5JointController(model, interface)
+    robot_config = arx5.RobotConfigFactory.get_instance().get_config(model)
+    controller_config = arx5.ControllerConfigFactory.get_instance().get_config(
+        "joint_controller", robot_config.joint_dof
+    )
+    controller = arx5.Arx5JointController(robot_config, controller_config, interface)
     controller.set_log_level(arx5.LogLevel.DEBUG)
     controller.reset_to_home()
     joint_waypoints = np.array(
