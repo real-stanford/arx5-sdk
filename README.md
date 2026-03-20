@@ -61,7 +61,7 @@ We recommend [mamba](https://github.com/conda-forge/miniforge?tab=readme-ov-file
 ``` sh
 mamba env create -f conda_environments/py310_environment.yaml
 # if you do not have mamba, you can also use conda, which takes significantly longer
-# Currently available python versions: 3.8, 3.9, 3.10, 3.11 
+# Currently available python versions: 3.8, 3.9, 3.10, 3.11, 3.12
 conda activate arx-py310
 mkdir build && cd build
 cmake ..
