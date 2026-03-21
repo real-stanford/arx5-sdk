@@ -232,6 +232,22 @@ void Arx5ControllerBase::set_to_damping()
 
 void Arx5ControllerBase::init_robot_()
 {
+    // Clear motor controller states before initialization (fix for motor controller state corruption)
+    logger_->info("Clearing motor controller states...");
+    for (int i = 0; i < robot_config_.joint_dof; i++)
+    {
+        if (robot_config_.motor_type[i] == MotorType::DM_J4310 || robot_config_.motor_type[i] == MotorType::DM_J4340 ||
+            robot_config_.motor_type[i] == MotorType::DM_J8009)
+        {
+            can_handle_.clear(robot_config_.motor_id[i]);
+        }
+    }
+    if (robot_config_.gripper_motor_type == MotorType::DM_J4310)
+    {
+        can_handle_.clear(robot_config_.gripper_motor_id);
+    }
+    sleep_ms(100); // Give motors time to process clear commands
+
     // Background send receive is disabled during initialization
     int init_rounds = 10; // Make sure the states of each motor is fully initialized
     for (int j = 0; j < init_rounds; j++)

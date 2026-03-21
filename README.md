@@ -2,53 +2,19 @@
 
 ## Safety-Related Configs
 
- - The safety checks in this controller are implemented through joint position, velocity, and torque limits. However, there is a trade-off between safety and reactiveness when setting these limits. To achieve a reasonable precision for our experiements, **the default values are insufficient to guarantee safety when the robot is close to singluarity or the input control signal includes a lot of noise**.
+ - The safety checks in this controller are implemented through joint position, velocity, and torque limits. However, there is a trade-off between safety and reactiveness when setting these limits. To achieve a reasonable precision for our experiements, **the default values are insufficient to guarantee safety when the robot is close to singularity or the input control signal includes a lot of noise**.
 - We highly recommend that users should **apply safety checks before sending control signals** (joint/eef) to the controller
-- Users could also modify the limit values of the joint velocity at their early stage of deployment.
-  - You can either directly change the default values in `config.h` for your robot model: [X5](https://github.com/real-stanford/arx5-sdk/blob/709f7ab7429f97c83e18687e650f3ee77d14719a/include/app/config.h#L96), [L5](https://github.com/real-stanford/arx5-sdk/blob/709f7ab7429f97c83e18687e650f3ee77d14719a/include/app/config.h#L140C25-L140C57) and **recompile the package**
-  - Or (more recommended) change the config values before instanticating the controller in python, similar to [this example](https://github.com/real-stanford/arx5-sdk/blob/709f7ab7429f97c83e18687e650f3ee77d14719a/python/examples/test_joint_control.py#L31). You need to set the values with a new numpy array, e.g. `robot_config.joint_vel_max=np.array([2,2,2,2,2,2])`, rather than indexing some of the existing values `robot_config.joint_vel_max[0]=2.0`, which will raise an error.
+- Users could also modify the limit values of the joint velocity at their early stage of deployment. Please change the config values before instantiating the controller in python, similar to [this example](https://github.com/real-stanford/arx5-sdk/blob/709f7ab7429f97c83e18687e650f3ee77d14719a/python/examples/test_joint_control.py#L31). You need to set the values with a new numpy array, e.g. `robot_config.joint_vel_max=np.array([2,2,2,2,2,2])`, rather than indexing some of the existing values `robot_config.joint_vel_max[0]=2.0`, which will raise an error.
 
-## Under Testing (2026.03.24)
-
-Directly install the package through pip without any system / conda dependency: `pip install arx5-interface`
-Please refer to README.md in `pypi_package` branch
-
-## Update (2026.01.29)
-- Update library for x86_64 Ubuntu20.04. If you have trouble loading the current libraries (version GLIBC_2.32 not found), please override `lib/x86_64/libsolver_20_04.so` to `lib/x86_64/libsolver.so` and `lib/x86_64/libhardware_20_04.so` to `lib/x86_64/libhardware.so` and recompile the package.
-- The default libraries are compiled on Ubuntu 22.04
+## Major Update (2026.03.20)
+- Enable direct pip install for both `x86_64` and `aarch64` platforms, supporting python 3.8~3.14. You may use `pip install arx5-interface` to install the package without any conda / system dependencies. If you need to updated any C++ files, you may also run `wheels/build_wheel_single_ver.sh` to build the wheel for your specific python version and directly install this wheel in pip or uv.
+- Set the gripper home position to be the fully opened position. To keep using the closed position as home, you may set the `target_state.gripper_pos` to 0 in `src/app/controller_base.cpp:187`.
+- Use relative path for the `urdf_path` in `include/app/config.h` based on the dynamic library loading path. Thanks [Jimmy Wu](https://jimmyyhwu.github.io/) for the PR.
 
 ## Update (2026.01.11)
-- In some recent robot models, the gripper motor is mounted in a different direction, which will lead to error: "Gripper position error: got xxx but should be in xxx". Please set the `gripper_open_readout` in `include/app/config.h` to a negative number and it should work normally. According to a github issue, a typical readout might be `gripper_open_readout=-3.4` and `gripper_width=0.082`. If the readout gripper width is inaccurate, you may also calibrate yourself in `python/examples/calibrate.py`
+- In some recent robot models, the gripper motor is mounted in a different direction, which will lead to error: "Gripper position error: got xxx but should be in xxx". Please set the `robot_config.gripper_open_readout` to a negative number and it should work normally. According to a github issue, a typical readout might be `gripper_open_readout=-3.4` and `robot_config.gripper_width=0.082`. If the readout gripper width is inaccurate, you may also calibrate yourself in `python/examples/calibrate.py`
 
-## Update (2025.08.29)
-- Support gripper force control (see `python/examples/test_gripper_force_compensation.py`)
-- Set conda-forge::soem version to 1.4.0 in conda environment files, thanks [Haoyu Xiong](https://haoyu-x.github.io/) for pointing out.
-- If you encounter error `undefined symbol: EcatError`, this is because the soem version is updated to 2.0.0, which is not compatible with the current version of the controller. Please downgrade soem version to 1.4.0 (`conda install conda-forge::soem=1.4.0`).
-
-## Update (2024.12.05)
-- Add safety checks to zmq_server
-- Unify the joint interpolator in both joint controller and cartesian controller for better smoothness
-- Support trajectory updating and velocity interpolation
-- Fix various bugs for gravity compensation, robot initialization etc.
-
-## Update (2024.08.22)
-- Enable one-step waypoint scheduling (see `python/examples`).
-- Support EtherCAT-CAN adapter (follow the instructions in [EtherCAT-CAN setup](README.md#ethercat-can-setup)).
-- Support arbitrary DoF robot arm (not only 6DoF); thoguh other DoF numbers are not tested yet.
-- Allow setting up robot and controller configurations as arguments (see `config.h` and `test_joint_control.py`), thanks to [Yifan Hou](https://yifan-hou.github.io/)
-
-When updating the sdk to your codebase, please first remove the entire `build` folder and run the building process again.
-
-## Citation
-If you find this repo helpful, please cite our corresponding paper [UMI-on-Legs](https://umi-on-legs.github.io/)
-```
-@inproceedings{ha2024umilegs,
-  title={{UMI} on Legs: Making Manipulation Policies Mobile with Manipulation-Centric Whole-body Controllers},
-  author={Huy Ha and Yihuai Gao and Zipeng Fu and Jie Tan and Shuran Song},
-  year={2024},
-  booktitle={Proceedings of the 2024 Conference on Robot Learning},
-}
-```
+Other Update Logs: Please refer to [update_logs.md](update_logs.md) for more details.
 
 ## Features
 - Run without ROS
@@ -59,6 +25,17 @@ If you find this repo helpful, please cite our corresponding paper [UMI-on-Legs]
 - Control multiple arms in the same process through C++ multi-threading (much better than Python multi-processing)
 
 ## Build & Install
+
+### pip install (Recommended)
+
+You may use `pip install arx5-interface` to install the package without any conda / system dependencies. If you have already build the package inside the conda environment, you need to delete the existing `.so` file under `python` folder to ensure the pip wheel is being used.
+
+If you need to updated any C++ files, you may also run `wheels/build_wheel_single_ver.sh` to build the wheel for your specific python version and directly install this wheel. 
+
+If you only need to update the config values, you don't need to change any C++ code. Please refer to `python/examples/test_joint_control.py` and `python/examples/spacemouse_teleop.py` to use `robot_config` and `controller_config` before instantiating the controller.
+
+### Build from source (Legacy)
+
 We set up a conda environment for all the cmake dependencies, so no system package is required. If you want to run `cmake` and `make` after modifying the C++ source files, please make sure you are under the created conda environment (`arx-py310` etc.).  
 
 We recommend [mamba](https://github.com/conda-forge/miniforge?tab=readme-ov-file#install) for creating conda environments, which takes only about 1min. You can also use `conda`, but it takes significantly longer (~10min).
@@ -221,3 +198,13 @@ export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/path/to/your/arx5-sdk/lib/your_arch
 
 After compiling the `arx5_interface` pybind dynamic library (usually `python/arx5_interface.cpython-version-arch-linux-gnu.so`), you can run it under other python environments (need to be the same python version as the one you built).
  
+## Citation
+If you find this repo helpful, please cite our corresponding paper [UMI-on-Legs](https://umi-on-legs.github.io/)
+```
+@inproceedings{ha2024umilegs,
+  title={{UMI} on Legs: Making Manipulation Policies Mobile with Manipulation-Centric Whole-body Controllers},
+  author={Huy Ha and Yihuai Gao and Zipeng Fu and Jie Tan and Shuran Song},
+  year={2024},
+  booktitle={Proceedings of the 2024 Conference on Robot Learning},
+}
+```
