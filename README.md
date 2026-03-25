@@ -30,6 +30,8 @@ Other Update Logs: Please refer to [update_logs.md](update_logs.md) for more det
 
 You may use `pip install arx5-interface` to install the package without any conda / system dependencies. If you have already build the package inside the conda environment, you need to delete the existing `.so` file under `python` folder to ensure the pip wheel is being used.
 
+If you encounter error "ERROR: No matching distribution found for arx5-interface", please upgrade pip by `pip install --upgrade pip` and try again.
+
 If you need to updated any C++ files, you may also run `wheels/build_wheel_single_ver.sh` to build the wheel for your specific python version and directly install this wheel. 
 
 If you only need to update the config values, you don't need to change any C++ code. Please refer to `python/examples/test_joint_control.py` and `python/examples/spacemouse_teleop.py` to use `robot_config` and `controller_config` before instantiating the controller.
