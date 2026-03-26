@@ -200,6 +200,16 @@ export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/path/to/your/arx5-sdk/lib/your_arch
 
 After compiling the `arx5_interface` pybind dynamic library (usually `python/arx5_interface.cpython-version-arch-linux-gnu.so`), you can run it under other python environments (need to be the same python version as the one you built).
  
+## Projects Using this Repository
+**[UMI-on-Legs](https://umi-on-legs.github.io/)**
+[UMI](https://umi-gripper.github.io/): [deployment code](https://github.com/real-stanford/umi-arx)
+[UVA](https://unified-video-action-model.github.io/): [deployment code](https://github.com/real-stanford/umi-arx/tree/uva)
+[Vision-in-Action](https://vision-in-action.github.io/)
+[Latent Policy Barrier](https://latentpolicybarrier.github.io/)
+[DynaGuide](https://dynaguide.github.io/)
+[Minimalist Compliance Control](https://minimalist-compliance-control.github.io/)
+More projects on going! 
+
 ## Citation
 If you find this repo helpful, please cite our corresponding paper [UMI-on-Legs](https://umi-on-legs.github.io/)
 ```
