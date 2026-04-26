@@ -208,6 +208,7 @@ After compiling the `arx5_interface` pybind dynamic library (usually `python/arx
 - [Latent Policy Barrier](https://latentpolicybarrier.github.io/)
 - [DynaGuide](https://dynaguide.github.io/)
 - [Minimalist Compliance Control](https://minimalist-compliance-control.github.io/)
+- [Gated Memory Policy](http://gated-memory-policy.github.io/)
 
 More cool projects on the way!
 
