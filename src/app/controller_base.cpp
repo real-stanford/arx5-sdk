@@ -270,6 +270,38 @@ void Arx5ControllerBase::init_robot_()
     // Check whether any motor has non-zero position
     if (joint_state_.pos == VecDoF::Zero(robot_config_.joint_dof))
     {
+        // EC motors are not queried in recv_(), so they only report their state after receiving a command.
+        // Send a zero-gain command to each EC motor and read again before giving up.
+        bool has_ec_motor = false;
+        for (int i = 0; i < robot_config_.joint_dof; i++)
+        {
+            if (robot_config_.motor_type[i] == MotorType::EC_A4310)
+            {
+                has_ec_motor = true;
+                break;
+            }
+        }
+        if (has_ec_motor)
+        {
+            logger_->info("No motor state received yet. Sending a request to EC motors...");
+            for (int j = 0; j < init_rounds; j++)
+            {
+                for (int i = 0; i < robot_config_.joint_dof; i++)
+                {
+                    if (robot_config_.motor_type[i] == MotorType::EC_A4310)
+                    {
+                        can_handle_.send_EC_motor_cmd(robot_config_.motor_id[i], 0, 0, 0, 0, 0);
+                        sleep_us(300);
+                    }
+                }
+                recv_();
+                check_joint_state_sanity_();
+                over_current_protection_();
+            }
+        }
+    }
+    if (joint_state_.pos == VecDoF::Zero(robot_config_.joint_dof))
+    {
         logger_->error("None of the motors are initialized. Please check the connection or power of the arm.");
         throw std::runtime_error(
             "None of the motors are initialized. Please check the connection or power of the arm.");
