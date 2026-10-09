@@ -19,6 +19,9 @@ classifiers = [
     "Operating System :: OS Independent",
 ]
 
+[project.optional-dependencies]
+visualization = ["viser>=1.1.1,<2", "yourdfpy>=0.0.60,<0.1"]
+
 [project.urls]
 Homepage = "https://github.com/yihuai-gao/arx5-sdk"
 
@@ -29,4 +32,7 @@ package-data = { arx5_interface = [
     "python/*.so",
     "lib/**/*.so",
     "models/*",
+    "models/meshes/**/*.STL",
+    "models/meshes/**/*.stl",
+    "models/meshes/**/*.obj",
 ] }

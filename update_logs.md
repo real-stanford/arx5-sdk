@@ -1,3 +1,8 @@
+## Update (2026.10.09)
+- Add an optional read-only Viser viewer for feedback status, joint/gripper positions, and EEF pose.
+- Add articulated X5 gripper visuals while preserving the original arm kinematics and EEF frame.
+- Add visualization dependencies, example, documentation, tests, and wheel packaging support.
+
 ## Update (2026.01.29)
 - Update library for x86_64 Ubuntu20.04. If you have trouble loading the current libraries (version GLIBC_2.32 not found), please override `lib/x86_64/libsolver_20_04.so` to `lib/x86_64/libsolver.so` and `lib/x86_64/libhardware_20_04.so` to `lib/x86_64/libhardware.so` and recompile the package.
 - The default libraries are compiled on Ubuntu 22.04

@@ -1,0 +1,3 @@
+# Optional viewer dependencies; the core SDK does not require these.
+viser>=1.1.1,<2
+yourdfpy>=0.0.60,<0.1
