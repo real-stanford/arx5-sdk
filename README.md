@@ -6,6 +6,9 @@
 - We highly recommend that users should **apply safety checks before sending control signals** (joint/eef) to the controller
 - Users could also modify the limit values of the joint velocity at their early stage of deployment. Please change the config values before instantiating the controller in python, similar to [this example](https://github.com/real-stanford/arx5-sdk/blob/709f7ab7429f97c83e18687e650f3ee77d14719a/python/examples/test_joint_control.py#L31). You need to set the values with a new numpy array, e.g. `robot_config.joint_vel_max=np.array([2,2,2,2,2,2])`, rather than indexing some of the existing values `robot_config.joint_vel_max[0]=2.0`, which will raise an error.
 
+## Update (2026.10.09)
+- Add optional read-only Viser visualization for feedback status, joint/gripper positions, and EEF pose. See [usage instructions](#optional-read-only-visualization).
+
 ## Update (2026.07.15)
 - [pypi version 0.1.3 for x86_64](https://pypi.org/project/arx5-interface/0.1.3/) [0.1.4 for aarch64](https://pypi.org/project/arx5-interface/0.1.4/) Fix the gripper over-current protection for robots with a reversed gripper motor direction (`gripper_open_readout < 0`, e.g. X5 2025 with the AC one gripper), where the torque reading sign is flipped and the protection was applied in the wrong direction. Thanks [Zhiming Xu](https://github.com/Mr-Wonderfool) for reporting and fixing this issue.
 
