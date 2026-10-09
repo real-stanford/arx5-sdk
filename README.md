@@ -203,6 +203,34 @@ export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/path/to/your/arx5-sdk/lib/your_arch
 
 After compiling the `arx5_interface` pybind dynamic library (usually `python/arx5_interface.cpython-version-arch-linux-gnu.so`), you can run it under other python environments (need to be the same python version as the one you built).
  
+## Optional read-only visualization
+
+Display feedback status, joint/gripper positions, and EEF pose with Viser.
+Install the dependencies from the repository root:
+
+```bash
+pip install -r conda_environments/requirements_visualization.txt
+```
+
+With `python/` on your import path, wrap an existing controller's control loop:
+
+```python
+from visualization import ViserViewer
+
+with ViserViewer(controller, port=8080):
+    run_existing_control_loop(controller)
+```
+
+Open `http://127.0.0.1:8080`. For remote access, pass `host="0.0.0.0"` and use
+`http://<robot-computer>:8080`. The viewer only reads feedback; closing it does
+not stop the controller.
+
+To preview the model without hardware:
+
+```bash
+python python/examples/visualize.py
+```
+
 ## Projects Using this Repository
 - **[UMI-on-Legs](https://umi-on-legs.github.io/)**
 - [UMI](https://umi-gripper.github.io/): [deployment code](https://github.com/real-stanford/umi-arx)

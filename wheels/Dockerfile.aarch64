@@ -34,6 +34,7 @@ COPY wheels/setup.py /root/arx5-sdk/
 COPY wheels/CMakeLists.txt /root/arx5-sdk/
 COPY wheels/lib/aarch64 /root/arx5-sdk/arx5_interface/lib/aarch64
 COPY wheels/__init__.py /root/arx5-sdk/arx5_interface/__init__.py
+COPY python/visualization.py /root/arx5-sdk/arx5_interface/visualization.py
 
 RUN cd arx5-sdk && \
     export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/lib:/root/arx5-sdk/arx5_interface/lib/aarch64 && \

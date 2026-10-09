@@ -1,0 +1,53 @@
+<?xml version="1.0"?>
+<!-- Display-only X5 gripper.
+     Attached to official link6; no arm parameters or EEF transforms are replaced.
+     Total opening = joint7 + joint8, with equal per-finger travel. -->
+<robot name="X5A_Gripper">
+    <link name="link6">
+        <visual>
+            <origin xyz="0 0 0" rpy="0 0 0" />
+            <geometry>
+                <mesh filename="meshes/X5/gripper/link6.STL" />
+            </geometry>
+            <material name="black">
+                <color rgba="0.89804 0.91765 0.92941 1" />
+            </material>
+        </visual>
+    </link>
+    <link name="link7">
+        <visual>
+            <origin xyz="0 0 0" rpy="0 0 0" />
+            <geometry>
+                <mesh filename="meshes/X5/gripper/link7.STL" />
+            </geometry>
+            <material name="black">
+                <color rgba="0.89804 0.91765 0.92941 1" />
+            </material>
+        </visual>
+    </link>
+    <joint name="joint7" type="prismatic">
+        <origin xyz="0.08657 0.024896 -0.0002436" rpy="0 0 0" />
+        <parent link="link6" />
+        <child link="link7" />
+        <axis xyz="0 1 0" />
+        <limit lower="0" upper="0.044" effort="100" velocity="1000" />
+    </joint>
+    <link name="link8">
+        <visual>
+            <origin xyz="0 0 0" rpy="0 0 0" />
+            <geometry>
+                <mesh filename="meshes/X5/gripper/link8.STL" />
+            </geometry>
+            <material name="black">
+                <color rgba="0.89804 0.91765 0.92941 1" />
+            </material>
+        </visual>
+    </link>
+    <joint name="joint8" type="prismatic">
+        <origin xyz="0.08657 -0.0249 -0.00024366" rpy="0 0 0" />
+        <parent link="link6" />
+        <child link="link8" />
+        <axis xyz="0 -1 0" />
+        <limit lower="0" upper="0.044" effort="100" velocity="1000" />
+    </joint>
+</robot>
