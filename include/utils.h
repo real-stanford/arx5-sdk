@@ -54,6 +54,10 @@ std::string state2str(const JointState &state, int precision = 3);
 
 std::string get_urdf(std::string model);
 
+// Writes a copy of `urdf_path` with the mass of the last link (the parent of `eef_link_name`) replaced by
+// `mass_kg` under /tmp/arx5_urdf/ and returns the copy's path. Only the mass changes.
+std::string patch_urdf_last_link_mass(const std::string &urdf_path, const std::string &eef_link_name, double mass_kg);
+
 std::string get_root_dir();
 
 } // namespace arx

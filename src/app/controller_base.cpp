@@ -15,6 +15,14 @@ Arx5ControllerBase::Arx5ControllerBase(RobotConfig robot_config, ControllerConfi
 {
     start_time_us_ = get_time_us();
     logger_->set_pattern("[%H:%M:%S %n %^%l%$] %v");
+    if (robot_config_.last_link_mass_kg > 0.0)
+    {
+        std::string patched_urdf = patch_urdf_last_link_mass(
+            robot_config_.urdf_path, robot_config_.eef_link_name, robot_config_.last_link_mass_kg);
+        logger_->info("Last link mass set to {:.3f} kg, using URDF {}", robot_config_.last_link_mass_kg,
+                      patched_urdf);
+        robot_config_.urdf_path = patched_urdf;
+    }
     solver_ = std::make_shared<Arx5Solver>(
         robot_config_.urdf_path, robot_config_.joint_dof, robot_config_.joint_pos_min, robot_config_.joint_pos_max,
         robot_config_.base_link_name, robot_config_.eef_link_name, robot_config_.gravity_vector);

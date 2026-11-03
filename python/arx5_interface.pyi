@@ -31,6 +31,8 @@ class RobotConfig:
     base_link_name: str
     eef_link_name: str
     urdf_path: str
+    last_link_mass_kg: float
+    """> 0 replaces the last link's mass (kg) in the URDF used for gravity compensation; 0 keeps the URDF's."""
 
 class ControllerConfig:
     """Does not have a constructor, use ControllerConfigFactory.get_instance().get_config(...) instead."""
