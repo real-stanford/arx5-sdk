@@ -1,5 +1,6 @@
 
 #include "utils.h"
+#include <cassert>
 #include <cstdarg>
 #include <cstdio>
 #include <dlfcn.h>

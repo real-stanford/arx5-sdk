@@ -4,7 +4,7 @@ project(arx5-sdk)
 
 set(CMAKE_BUILD_TYPE Debug)
 
-set(CMAKE_CXX_STANDARD 14)
+set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_POSITION_INDEPENDENT_CODE ON) # global PIC
 
 find_package(Threads REQUIRED)
