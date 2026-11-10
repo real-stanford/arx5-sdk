@@ -27,6 +27,17 @@ Other Update Logs: Please refer to [update_logs.md](update_logs.md) for more det
 - Cartesian space controller with keyboard and SpaceMouse tele-operation and teach-replay (thanks to [Cheng Chi](https://cheng-chi.github.io/))
 - Control multiple arms in the same process through C++ multi-threading (much better than Python multi-processing)
 
+## Heavier end effector (last link mass)
+
+Gravity compensation uses the URDF link masses. If your gripper weighs differently from the stock one, set
+`robot_config.last_link_mass_kg` before creating the controller; the SDK then loads a copy of the URDF with the
+last link's (e.g. `link6`) mass replaced. `0` (default) keeps the URDF's mass.
+
+```python
+robot_config = arx5.RobotConfigFactory.get_instance().get_config("X5")
+robot_config.last_link_mass_kg = 0.62  # stock X5 link6 is 0.581 kg
+```
+
 ## Build & Install
 
 ### pip install (Recommended)

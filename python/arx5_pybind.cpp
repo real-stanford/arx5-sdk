@@ -127,7 +127,8 @@ PYBIND11_MODULE(arx5_interface, m)
         .def_readwrite("gravity_vector", &RobotConfig::gravity_vector)
         .def_readwrite("base_link_name", &RobotConfig::base_link_name)
         .def_readwrite("eef_link_name", &RobotConfig::eef_link_name)
-        .def_readwrite("urdf_path", &RobotConfig::urdf_path);
+        .def_readwrite("urdf_path", &RobotConfig::urdf_path)
+        .def_readwrite("last_link_mass_kg", &RobotConfig::last_link_mass_kg);
 
     py::class_<ControllerConfig>(m, "ControllerConfig")
         .def_readwrite("controller_type", &ControllerConfig::controller_type)

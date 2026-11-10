@@ -44,6 +44,8 @@ class RobotConfig
 
     std::string urdf_path;
 
+    double last_link_mass_kg = 0.0;
+
     RobotConfig(std::string robot_model, VecDoF joint_pos_min, VecDoF joint_pos_max, VecDoF joint_vel_max,
                 VecDoF joint_torque_max, Pose6d ee_vel_max, double gripper_vel_max, double gripper_torque_max,
                 double gripper_width, double gripper_open_readout, int joint_dof, std::vector<int> motor_id,

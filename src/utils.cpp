@@ -1,8 +1,15 @@
 
 #include "utils.h"
+#include <cassert>
 #include <cstdarg>
 #include <cstdio>
 #include <dlfcn.h>
+#include <filesystem>
+#include <fstream>
+#include <iomanip>
+#include <regex>
+#include <sstream>
+#include <stdexcept>
 
 namespace arx
 {
@@ -478,6 +485,56 @@ std::string state2str(const JointState &state, int precision)
 bool JointStateInterpolator::is_initialized()
 {
     return initialized_;
+}
+
+std::string patch_urdf_last_link_mass(const std::string &urdf_path, const std::string &eef_link_name, double mass_kg)
+{
+    std::ifstream in(urdf_path);
+    if (!in)
+        throw std::runtime_error("Cannot read URDF " + urdf_path);
+    std::stringstream buffer;
+    buffer << in.rdbuf();
+    std::string text = buffer.str();
+
+    // Last link = parent of the joint whose child is the eef link.
+    std::string link_name;
+    const std::regex joint_re("<joint\\b[^>]*>([\\s\\S]*?)</joint>");
+    const std::regex child_re("<child\\s+link\\s*=\\s*\"" + eef_link_name + "\"");
+    const std::regex parent_re("<parent\\s+link\\s*=\\s*\"([^\"]+)\"");
+    for (auto it = std::sregex_iterator(text.begin(), text.end(), joint_re); it != std::sregex_iterator(); ++it)
+    {
+        std::string body = (*it)[1].str();
+        std::smatch parent;
+        if (std::regex_search(body, child_re) && std::regex_search(body, parent, parent_re))
+        {
+            link_name = parent[1].str();
+            break;
+        }
+    }
+    if (link_name.empty())
+        throw std::runtime_error("No joint has child link \"" + eef_link_name + "\" in " + urdf_path);
+
+    // Replace <mass value="..."> inside that link.
+    const std::regex mass_re("(<link\\s+name\\s*=\\s*\"" + link_name +
+                             "\"\\s*>[\\s\\S]*?<inertial>[\\s\\S]*?<mass\\s+value\\s*=\\s*\")([^\"]*)(\")");
+    std::smatch m;
+    if (!std::regex_search(text, m, mass_re))
+        throw std::runtime_error("Link \"" + link_name + "\" in " + urdf_path + " has no <inertial><mass value>");
+    std::ostringstream mass_str;
+    mass_str << std::fixed << std::setprecision(6) << mass_kg;
+    text = text.substr(0, m.position(2)) + mass_str.str() + text.substr(m.position(2) + m.length(2));
+
+    std::filesystem::path src = std::filesystem::absolute(urdf_path);
+    std::ostringstream name;
+    name << src.stem().string() << "_" << link_name << "_" << std::fixed << std::setprecision(4) << mass_kg << "kg"
+         << src.extension().string();
+    std::filesystem::path out = std::filesystem::temp_directory_path() / "arx5_urdf" / name.str();
+    std::filesystem::create_directories(out.parent_path());
+    std::ofstream file(out);
+    if (!file)
+        throw std::runtime_error("Cannot write " + out.string());
+    file << text;
+    return out.string();
 }
 } // namespace arx
 
