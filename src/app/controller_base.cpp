@@ -568,9 +568,21 @@ void Arx5ControllerBase::update_output_cmd_()
             output_joint_cmd_.gripper_pos - prev_output_cmd.gripper_pos; // negative for closing, positive for opening
         if (delta_pos * sign > 0)
         {
+            double new_gripper_pos = joint_state_.gripper_pos;
+            if (gain_.gripper_kp > 0)
+            {
+                // Command lead (m) that produces gripper_torque_max / 2 at rest
+                double max_lead = robot_config_.gripper_torque_max / 2 / gain_.gripper_kp *
+                                  robot_config_.gripper_width / std::abs(robot_config_.gripper_open_readout);
+                double limit_pos = joint_state_.gripper_pos + sign * max_lead;
+                // Only pull the command back toward the measured position, never push it further
+                new_gripper_pos = sign < 0 ? std::max(output_joint_cmd_.gripper_pos, limit_pos)
+                                           : std::min(output_joint_cmd_.gripper_pos, limit_pos);
+            }
             if (prev_gripper_updated_)
-                logger_->warn("Gripper torque is too large, gripper pos cmd is not updated");
-            output_joint_cmd_.gripper_pos = prev_output_cmd.gripper_pos;
+                logger_->warn("Gripper torque is too large, gripper pos cmd is backed off from {:.3f} to {:.3f}",
+                              output_joint_cmd_.gripper_pos, new_gripper_pos);
+            output_joint_cmd_.gripper_pos = new_gripper_pos;
             prev_gripper_updated_ = false;
         }
         else
