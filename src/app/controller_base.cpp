@@ -7,6 +7,17 @@
 #include <sys/types.h>
 using namespace arx;
 
+namespace
+{
+// Used by the torque readings (update_joint_state_) and the feedforward torque commands (send_recv_); the gripper
+// over-current back-off (update_output_cmd_) uses the DM_J4310 one.
+// TODO: in the motor documentation, there shouldn't be these torque constants. Torque will go directly into the
+// motors
+const double torque_constant_EC_A4310 = 1.4; // Nm/A
+const double torque_constant_DM_J4310 = 0.424;
+const double torque_constant_DM_J4340 = 1.0;
+} // namespace
+
 Arx5ControllerBase::Arx5ControllerBase(RobotConfig robot_config, ControllerConfig controller_config,
                                        std::string interface_name)
     : can_handle_(interface_name),
@@ -440,11 +451,6 @@ void Arx5ControllerBase::enter_emergency_state_()
 
 void Arx5ControllerBase::update_joint_state_()
 {
-    // TODO: in the motor documentation, there shouldn't be these torque constants. Torque will go directly into the
-    // motors
-    const double torque_constant_EC_A4310 = 1.4; // Nm/A
-    const double torque_constant_DM_J4310 = 0.424;
-    const double torque_constant_DM_J4340 = 1.0;
     std::array<OD_Motor_Msg, 10> motor_msg = can_handle_.get_motor_msg();
     std::lock_guard<std::mutex> guard(state_mutex_);
 
@@ -590,8 +596,10 @@ void Arx5ControllerBase::update_output_cmd_()
             double new_gripper_pos = joint_state_.gripper_pos;
             if (gain_.gripper_kp > 0)
             {
-                // Command lead (m) that produces gripper_torque_max / 2 at rest
-                double max_lead = robot_config_.gripper_torque_max / 2 / gain_.gripper_kp *
+                // Command lead (m) whose torque reading at rest is gripper_torque_max / 2. gripper_kp goes to the
+                // motor unscaled and acts on the error in motor rad, while the torque reading is the motor readout
+                // times torque_constant_DM_J4310, so the reading is torque_constant_DM_J4310 * gripper_kp * error
+                double max_lead = robot_config_.gripper_torque_max / 2 / (torque_constant_DM_J4310 * gain_.gripper_kp) *
                                   robot_config_.gripper_width / std::abs(robot_config_.gripper_open_readout);
                 double limit_pos = joint_state_.gripper_pos + sign * max_lead;
                 // Only pull the command back toward the measured position, never push it further
@@ -641,11 +649,6 @@ void Arx5ControllerBase::update_output_cmd_()
 
 void Arx5ControllerBase::send_recv_()
 {
-    // TODO: in the motor documentation, there shouldn't be these torque constants. Torque will go directly into the
-    // motors
-    const double torque_constant_EC_A4310 = 1.4; // Nm/A
-    const double torque_constant_DM_J4310 = 0.424;
-    const double torque_constant_DM_J4340 = 1.0;
     int start_time_us = get_time_us();
 
     update_output_cmd_();
