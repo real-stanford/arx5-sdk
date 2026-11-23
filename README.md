@@ -29,13 +29,21 @@ Other Update Logs: Please refer to [update_logs.md](update_logs.md) for more det
 
 ## Heavier end effector (last link mass)
 
-Gravity compensation uses the URDF link masses. If your gripper weighs differently from the stock one, set
-`robot_config.last_link_mass_kg` before creating the controller; the SDK then loads a copy of the URDF with the
-last link's (e.g. `link6`) mass replaced. `0` (default) keeps the URDF's mass.
+Gravity compensation uses the URDF link masses. If your end effector differs from the stock one, set
+`robot_config.last_link_mass_kg` before creating the controller. The value is the **total mass of the last link**
+(the link body plus everything mounted on it), not the gripper's own weight. `0` (default) keeps the URDF's mass.
+
+Stock values (kg): X5 and L5 0.581, X5_umi and L5_umi 0.902, X5_iphumi and L5_iphumi 0.952, X7_left and X7_right
+0.66.
+
+- Only the mass changes; the centre of mass and inertia stay at the model's values, so a load mounted further out
+  than the stock one is still under-compensated at the wrist.
+- The patched URDF is a new file in the system temp directory; `get_robot_config().urdf_path` returns it.
+- A value that is negative, not finite or above 10 kg raises an error.
 
 ```python
 robot_config = arx5.RobotConfigFactory.get_instance().get_config("X5")
-robot_config.last_link_mass_kg = 0.62  # stock X5 link6 is 0.581 kg
+robot_config.last_link_mass_kg = 0.62  # stock X5 last link is 0.581 kg
 ```
 
 ## Build & Install

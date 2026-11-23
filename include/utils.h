@@ -54,8 +54,11 @@ std::string state2str(const JointState &state, int precision = 3);
 
 std::string get_urdf(std::string model);
 
-// Writes a copy of `urdf_path` with the mass of the last link (the parent of `eef_link_name`) replaced by
-// `mass_kg` under /tmp/arx5_urdf/ and returns the copy's path. Only the mass changes.
+// Writes a copy of `urdf_path` in which only the <mass value> of the last link (the parent of `eef_link_name`) is
+// replaced by `mass_kg`, and returns its path: a new file per call in std::filesystem::temp_directory_path()
+// (follows TMPDIR), named arx5_<urdf stem>_<link>_XXXXXX.urdf, mode 0600. The caller keeps the file; it is never
+// deleted. Throws std::invalid_argument if `mass_kg` is not finite, <= 0 or > 10 kg, and std::runtime_error if the
+// URDF cannot be read, the link or its <inertial><mass> is missing, or the copy cannot be written.
 std::string patch_urdf_last_link_mass(const std::string &urdf_path, const std::string &eef_link_name, double mass_kg);
 
 std::string get_root_dir();

@@ -1,8 +1,13 @@
 
 #include "utils.h"
 #include <cassert>
+#include <cctype>
+#include <cerrno>
+#include <cmath>
 #include <cstdarg>
 #include <cstdio>
+#include <cstdlib>
+#include <cstring>
 #include <dlfcn.h>
 #include <filesystem>
 #include <fstream>
@@ -10,6 +15,7 @@
 #include <regex>
 #include <sstream>
 #include <stdexcept>
+#include <unistd.h>
 
 namespace arx
 {
@@ -487,8 +493,36 @@ bool JointStateInterpolator::is_initialized()
     return initialized_;
 }
 
+namespace
+{
+// Far above the last link of any of these arms; catches a value given in grams instead of kilograms.
+constexpr double kMaxLastLinkMassKg = 10.0;
+
+// Escapes the ECMAScript regex metacharacters of `s` so it matches literally.
+std::string regex_escape(const std::string &s)
+{
+    static const std::string special = R"(\^$.|?*+()[]{})";
+    std::string out;
+    for (char c : s)
+    {
+        if (special.find(c) != std::string::npos)
+            out += '\\';
+        out += c;
+    }
+    return out;
+}
+} // namespace
+
 std::string patch_urdf_last_link_mass(const std::string &urdf_path, const std::string &eef_link_name, double mass_kg)
 {
+    if (!std::isfinite(mass_kg) || mass_kg <= 0.0 || mass_kg > kMaxLastLinkMassKg)
+    {
+        std::ostringstream msg;
+        msg << "last_link_mass_kg = " << mass_kg << " is invalid: it must be finite, > 0 and <= "
+            << kMaxLastLinkMassKg << " kg";
+        throw std::invalid_argument(msg.str());
+    }
+
     std::ifstream in(urdf_path);
     if (!in)
         throw std::runtime_error("Cannot read URDF " + urdf_path);
@@ -499,7 +533,7 @@ std::string patch_urdf_last_link_mass(const std::string &urdf_path, const std::s
     // Last link = parent of the joint whose child is the eef link.
     std::string link_name;
     const std::regex joint_re("<joint\\b[^>]*>([\\s\\S]*?)</joint>");
-    const std::regex child_re("<child\\s+link\\s*=\\s*\"" + eef_link_name + "\"");
+    const std::regex child_re("<child\\s+link\\s*=\\s*\"" + regex_escape(eef_link_name) + "\"");
     const std::regex parent_re("<parent\\s+link\\s*=\\s*\"([^\"]+)\"");
     for (auto it = std::sregex_iterator(text.begin(), text.end(), joint_re); it != std::sregex_iterator(); ++it)
     {
@@ -514,27 +548,60 @@ std::string patch_urdf_last_link_mass(const std::string &urdf_path, const std::s
     if (link_name.empty())
         throw std::runtime_error("No joint has child link \"" + eef_link_name + "\" in " + urdf_path);
 
-    // Replace <mass value="..."> inside that link.
-    const std::regex mass_re("(<link\\s+name\\s*=\\s*\"" + link_name +
-                             "\"\\s*>[\\s\\S]*?<inertial>[\\s\\S]*?<mass\\s+value\\s*=\\s*\")([^\"]*)(\")");
+    // The link element: its opening tag up to the first </link> after it. The mass is searched only there.
+    const std::regex link_open_re("<link\\s+name\\s*=\\s*\"" + regex_escape(link_name) + "\"\\s*(/?)>");
+    std::smatch open;
+    if (!std::regex_search(text, open, link_open_re))
+        throw std::runtime_error("Link \"" + link_name + "\" not found in " + urdf_path);
+    const size_t span_begin = open.position(0) + open.length(0);
+    const size_t span_end = open[1].length() > 0 ? span_begin : text.find("</link>", span_begin);
+    if (span_end == std::string::npos)
+        throw std::runtime_error("Link \"" + link_name + "\" in " + urdf_path + " has no </link>");
+    const std::string span = text.substr(span_begin, span_end - span_begin);
+    const std::regex mass_re("<inertial>[\\s\\S]*?<mass\\s+value\\s*=\\s*\"([^\"]*)\"");
     std::smatch m;
-    if (!std::regex_search(text, m, mass_re))
+    if (!std::regex_search(span, m, mass_re))
         throw std::runtime_error("Link \"" + link_name + "\" in " + urdf_path + " has no <inertial><mass value>");
     std::ostringstream mass_str;
     mass_str << std::fixed << std::setprecision(6) << mass_kg;
-    text = text.substr(0, m.position(2)) + mass_str.str() + text.substr(m.position(2) + m.length(2));
+    const size_t value_pos = span_begin + m.position(1);
+    text = text.substr(0, value_pos) + mass_str.str() + text.substr(value_pos + m.length(1));
 
-    std::filesystem::path src = std::filesystem::absolute(urdf_path);
-    std::ostringstream name;
-    name << src.stem().string() << "_" << link_name << "_" << std::fixed << std::setprecision(4) << mass_kg << "kg"
-         << src.extension().string();
-    std::filesystem::path out = std::filesystem::temp_directory_path() / "arx5_urdf" / name.str();
-    std::filesystem::create_directories(out.parent_path());
-    std::ofstream file(out);
-    if (!file)
-        throw std::runtime_error("Cannot write " + out.string());
-    file << text;
-    return out.string();
+    // A new file per call, created exclusively with mode 0600; the caller keeps it (the solver may read it later).
+    const std::string stem = std::filesystem::path(urdf_path).stem().string();
+    const std::string suffix = ".urdf";
+    std::string name = "arx5_" + stem + "_" + link_name;
+    // Names come from the URDF: keep the file inside the temp directory whatever characters they contain
+    for (char &c : name)
+        if (!std::isalnum(static_cast<unsigned char>(c)) && c != '_' && c != '-')
+            c = '_';
+    std::string out = (std::filesystem::temp_directory_path() / (name + "_XXXXXX" + suffix)).string();
+    int fd = mkstemps(out.data(), static_cast<int>(suffix.size()));
+    if (fd < 0)
+        throw std::runtime_error("Cannot create " + out + ": " + std::strerror(errno));
+    size_t written = 0;
+    int err = 0;
+    while (written < text.size())
+    {
+        ssize_t n = ::write(fd, text.data() + written, text.size() - written);
+        if (n < 0 && errno == EINTR)
+            continue;
+        if (n <= 0)
+        {
+            err = n < 0 ? errno : EIO;
+            break;
+        }
+        written += static_cast<size_t>(n);
+    }
+    if (::close(fd) != 0 && err == 0)
+        err = errno;
+    if (err != 0)
+    {
+        std::error_code ec;
+        std::filesystem::remove(out, ec);
+        throw std::runtime_error("Cannot write " + out + ": " + std::strerror(err));
+    }
+    return out;
 }
 } // namespace arx
 

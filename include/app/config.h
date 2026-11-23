@@ -44,6 +44,7 @@ class RobotConfig
 
     std::string urdf_path;
 
+    // Total mass (kg) of the last link incl. everything mounted on it; replaces the URDF's value. 0 keeps the URDF's.
     double last_link_mass_kg = 0.0;
 
     RobotConfig(std::string robot_model, VecDoF joint_pos_min, VecDoF joint_pos_max, VecDoF joint_vel_max,
