@@ -457,7 +457,8 @@ void Arx5ControllerBase::update_joint_state_()
     for (int i = 0; i < robot_config_.joint_dof; i++)
     {
         joint_state_.pos[i] = motor_msg[robot_config_.motor_id[i]].angle_actual_rad;
-        joint_state_.vel[i] = motor_msg[robot_config_.motor_id[i]].speed_actual_rad;
+        joint_state_.vel[i] =
+            motor_msg[robot_config_.motor_id[i]].speed_actual_rad * robot_config_.joint_velocity_feedback_scale[i];
 
         // Torque: matching the values (there must be something wrong)
         if (robot_config_.motor_type[i] == MotorType::EC_A4310)
@@ -481,8 +482,9 @@ void Arx5ControllerBase::update_joint_state_()
     joint_state_.gripper_pos = motor_msg[robot_config_.gripper_motor_id].angle_actual_rad /
                                robot_config_.gripper_open_readout * robot_config_.gripper_width;
 
-    joint_state_.gripper_vel = motor_msg[robot_config_.gripper_motor_id].speed_actual_rad /
-                               robot_config_.gripper_open_readout * robot_config_.gripper_width;
+    joint_state_.gripper_vel = motor_msg[robot_config_.gripper_motor_id].speed_actual_rad *
+                               robot_config_.gripper_velocity_feedback_scale / robot_config_.gripper_open_readout *
+                               robot_config_.gripper_width;
 
     joint_state_.gripper_torque =
         motor_msg[robot_config_.gripper_motor_id].current_actual_float * torque_constant_DM_J4310;
@@ -670,13 +672,15 @@ void Arx5ControllerBase::send_recv_()
             {
 
                 can_handle_.send_DM_motor_cmd(robot_config_.motor_id[i], gain_.kp[i], gain_.kd[i],
-                                              output_joint_cmd_.pos[i], output_joint_cmd_.vel[i],
+                                              output_joint_cmd_.pos[i],
+                                              output_joint_cmd_.vel[i] / robot_config_.joint_velocity_feedback_scale[i],
                                               output_joint_cmd_.torque[i] / torque_constant_DM_J4310);
             }
             else if (robot_config_.motor_type[i] == MotorType::DM_J4340)
             {
                 can_handle_.send_DM_motor_cmd(robot_config_.motor_id[i], gain_.kp[i], gain_.kd[i],
-                                              output_joint_cmd_.pos[i], output_joint_cmd_.vel[i],
+                                              output_joint_cmd_.pos[i],
+                                              output_joint_cmd_.vel[i] / robot_config_.joint_velocity_feedback_scale[i],
                                               output_joint_cmd_.torque[i] / torque_constant_DM_J4340);
             }
             else
@@ -696,8 +700,8 @@ void Arx5ControllerBase::send_recv_()
 
         double gripper_motor_pos =
             output_joint_cmd_.gripper_pos / robot_config_.gripper_width * robot_config_.gripper_open_readout;
-        double gripper_motor_vel =
-            output_joint_cmd_.gripper_vel / robot_config_.gripper_width * robot_config_.gripper_open_readout;
+        double gripper_motor_vel = output_joint_cmd_.gripper_vel / robot_config_.gripper_width *
+                                   robot_config_.gripper_open_readout / robot_config_.gripper_velocity_feedback_scale;
         double gripper_motor_torque = output_joint_cmd_.gripper_torque / torque_constant_DM_J4310;
         can_handle_.send_DM_motor_cmd(robot_config_.gripper_motor_id, gain_.gripper_kp, gain_.gripper_kd,
                                       gripper_motor_pos, gripper_motor_vel, gripper_motor_torque);

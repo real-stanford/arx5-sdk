@@ -30,8 +30,10 @@ class RobotConfig
     int joint_dof;
     std::vector<int> motor_id;
     std::vector<MotorType> motor_type;
+    VecDoF joint_velocity_feedback_scale; // motor VMAX / DM_V_MAX
     int gripper_motor_id;
-    MotorType gripper_motor_type; // Set to MotorType::NONE if the robot does not have a gripper
+    MotorType gripper_motor_type;           // Set to MotorType::NONE if the robot does not have a gripper
+    double gripper_velocity_feedback_scale; // motor VMAX / DM_V_MAX
 
     // Will be used in inverse dynamics calculation.
     // Please change it to other values if the robot arm is not placed on the ground.
@@ -57,7 +59,8 @@ class RobotConfig
           joint_vel_max(joint_vel_max), joint_torque_max(joint_torque_max), ee_vel_max(ee_vel_max),
           gripper_vel_max(gripper_vel_max), gripper_torque_max(gripper_torque_max), gripper_width(gripper_width),
           gripper_open_readout(gripper_open_readout), joint_dof(joint_dof), motor_id(motor_id), motor_type(motor_type),
-          gripper_motor_id(gripper_motor_id), gripper_motor_type(gripper_motor_type), gravity_vector(gravity_vector),
+          joint_velocity_feedback_scale(VecDoF::Ones(joint_dof)), gripper_motor_id(gripper_motor_id),
+          gripper_motor_type(gripper_motor_type), gripper_velocity_feedback_scale(1.0), gravity_vector(gravity_vector),
           base_link_name(base_link_name), eef_link_name(eef_link_name), urdf_path(urdf_path)
     {
     }
@@ -119,6 +122,9 @@ class RobotConfigFactory
             "eef_link",                                                       // eef_link_name
             model_dir + "/X5.urdf"                                            // urdf_path
         );
+        // DM_J4310 joints on X5 use VMAX = 30 rad/s
+        configurations["X5"]->joint_velocity_feedback_scale =
+            (VecDoF(6) << 1.0, 1.0, 1.0, 30.0 / 45.0, 30.0 / 45.0, 30.0 / 45.0).finished();
         configurations["X5_umi"] = std::make_shared<RobotConfig>(
             "X5_umi",                                                      // robot_model
             (VecDoF(6) << -3.14, -0.05, -0.1, -1.6, -1.57, -2).finished(), // joint_pos_min
